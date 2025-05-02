@@ -18,6 +18,7 @@ package com.google.cloud.hadoop.fs.gcs;
 
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.BLOCK_SIZE;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.DELEGATION_TOKEN_BINDING_CLASS;
+import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_CLOUD_LOGGING_ENABLE;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_CONFIG_PREFIX;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_FILE_CHECKSUM_TYPE;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_GLOB_ALGORITHM;
@@ -283,6 +284,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     checkArgument(path.getScheme() != null, "scheme of path must not be null");
     checkArgument(path.getScheme().equals(getScheme()), "URI scheme not supported: %s", path);
 
+    logger.atInfo().log(
+        "Cloud logging enabled: %s", GCS_CLOUD_LOGGING_ENABLE.get(config, config::getBoolean));
     config =
         ProviderUtils.excludeIncompatibleCredentialProviders(config, GoogleHadoopFileSystem.class);
     super.initialize(path, config);

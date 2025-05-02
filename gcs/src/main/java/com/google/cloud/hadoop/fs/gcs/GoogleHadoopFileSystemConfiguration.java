@@ -556,6 +556,10 @@ public class GoogleHadoopFileSystemConfiguration {
           "fs.gs.write.parallel.composite.upload.part.file.name.prefix",
           AsyncWriteChannelOptions.DEFAULT.getPartFileNamePrefix());
 
+  public static final HadoopConfigurationProperty<Boolean> GCS_CLOUD_LOGGING_ENABLE =
+      new HadoopConfigurationProperty<>(
+          "fs.gs.cloud.logging.enable", GoogleCloudStorageOptions.DEFAULT.isCloudLoggingEnabled());
+
   static GoogleCloudStorageFileSystemOptions.Builder getGcsFsOptionsBuilder(Configuration config) {
     return GoogleCloudStorageFileSystemOptions.builder()
         .setBucketDeleteEnabled(GCE_BUCKET_DELETE_ENABLE.get(config, config::getBoolean))
@@ -618,6 +622,7 @@ public class GoogleHadoopFileSystemConfiguration {
         .setTraceLogEnabled(GCS_TRACE_LOG_ENABLE.get(config, config::getBoolean))
         .setOperationTraceLogEnabled(GCS_OPERATION_TRACE_LOG_ENABLE.get(config, config::getBoolean))
         .setTrafficDirectorEnabled(GCS_GRPC_TRAFFICDIRECTOR_ENABLE.get(config, config::getBoolean))
+        .setCloudLoggingEnabled(GCS_CLOUD_LOGGING_ENABLE.get(config, config::getBoolean))
         .setWriteChannelOptions(getWriteChannelOptions(config));
   }
 
