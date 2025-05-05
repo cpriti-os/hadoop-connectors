@@ -62,6 +62,10 @@
       <artifactId>google-oauth-client</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-logging</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.flogger</groupId>
       <artifactId>google-extensions</artifactId>
     </dependency>

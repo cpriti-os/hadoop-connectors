@@ -16,17 +16,7 @@
 
 package com.google.cloud.hadoop.fs.gcs;
 
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.BLOCK_SIZE;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.DELEGATION_TOKEN_BINDING_CLASS;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_CLOUD_LOGGING_ENABLE;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_CONFIG_PREFIX;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_FILE_CHECKSUM_TYPE;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_GLOB_ALGORITHM;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_LAZY_INITIALIZATION_ENABLE;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_OPERATION_TRACE_LOG_ENABLE;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_OUTPUT_STREAM_SYNC_MIN_INTERVAL;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_WORKING_DIRECTORY;
-import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.PERMISSIONS_TO_REPORT;
+import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.*;
 import static com.google.cloud.hadoop.util.HadoopCredentialsConfiguration.CLOUD_PLATFORM_SCOPE;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -50,15 +40,11 @@ import com.google.cloud.hadoop.gcsio.ListFileOptions;
 import com.google.cloud.hadoop.gcsio.StorageResourceId;
 import com.google.cloud.hadoop.gcsio.UpdatableItemInfo;
 import com.google.cloud.hadoop.gcsio.UriPaths;
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.*;
 import com.google.cloud.hadoop.util.AccessTokenProvider.AccessTokenType;
-import com.google.cloud.hadoop.util.ApiErrorExtractor;
-import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
 import com.google.cloud.hadoop.util.HadoopCredentialsConfiguration;
 import com.google.cloud.hadoop.util.HadoopCredentialsConfiguration.AccessTokenProviderCredentials;
-import com.google.cloud.hadoop.util.ITraceFactory;
-import com.google.cloud.hadoop.util.PropertyUtil;
-import com.google.cloud.hadoop.util.TraceFactory;
+import com.google.cloud.hadoop.util.interceptors.LoggingInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
 import com.google.common.base.Suppliers;
@@ -94,6 +80,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.hadoop.conf.Configuration;
@@ -283,7 +270,13 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     checkArgument(config != null, "config must not be null");
     checkArgument(path.getScheme() != null, "scheme of path must not be null");
     checkArgument(path.getScheme().equals(getScheme()), "URI scheme not supported: %s", path);
-
+    Logger.getLogger(GoogleHadoopFileSystem.class.getName()).addHandler(new LoggingInterceptor());
+    if (GCS_CLOUD_LOGGING_ENABLE.get(config, config::getBoolean)) {
+      // Set up the Google Cloud Logging options
+      CloudLoggingOptions.DEFAULT_LOG_NAME =
+          "gcs-connector" + GCS_APPLICATION_NAME_SUFFIX.get(config, config::get);
+      CloudLoggingOptions.CLOUD_LOGGING_ENABLED = true;
+    }
     logger.atInfo().log(
         "Cloud logging enabled: %s", GCS_CLOUD_LOGGING_ENABLE.get(config, config::getBoolean));
     config =

@@ -40,6 +40,7 @@ import com.google.cloud.hadoop.gcsio.GoogleCloudStorageStatistics;
 import com.google.cloud.hadoop.gcsio.StatisticTypeEnum;
 import com.google.cloud.hadoop.util.ITraceFactory;
 import com.google.cloud.hadoop.util.ITraceOperation;
+import com.google.cloud.hadoop.util.interceptors.LoggingInterceptor;
 import com.google.common.base.Stopwatch;
 import com.google.common.flogger.GoogleLogger;
 import com.google.common.flogger.LazyArgs;
@@ -48,6 +49,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -88,7 +90,8 @@ public class GhfsGlobalStorageStatistics extends StorageStatistics {
   public GhfsGlobalStorageStatistics() {
 
     super(NAME);
-
+    Logger.getLogger(GhfsGlobalStorageStatistics.class.getName())
+        .addHandler(new LoggingInterceptor());
     for (GoogleCloudStorageStatistics opType : GoogleCloudStorageStatistics.values()) {
       addStatistic(opType.getSymbol(), opType.getType());
     }
