@@ -60,6 +60,7 @@ import com.google.cloud.hadoop.util.HadoopCredentialsConfiguration.AccessTokenPr
 import com.google.cloud.hadoop.util.ITraceFactory;
 import com.google.cloud.hadoop.util.PropertyUtil;
 import com.google.cloud.hadoop.util.TraceFactory;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.cloud.hadoop.util.interceptors.LoggingInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
@@ -280,6 +281,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public void initialize(URI path, Configuration config) throws IOException {
+    logger.atFiner().log("initialize(path: %s, config: %s)", path, config);
+
     checkArgument(path != null, "path must not be null");
     checkArgument(config != null, "config must not be null");
     checkArgument(path.getScheme() != null, "scheme of path must not be null");
@@ -592,6 +595,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public FSDataInputStream open(Path hadoopPath, int bufferSize) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -610,6 +614,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   /** This is an experimental API and can change without notice. */
   public FSDataInputStream open(FileStatus status) throws IOException {
+    InvocationIdContext.setInvocationId();
     logger.atFine().log("openWithStatus(%s)", status);
 
     if (!GoogleHadoopFileStatus.class.isAssignableFrom(status.getClass())) {
@@ -646,6 +651,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       long blockSize,
       Progressable progress)
       throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -694,6 +700,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       long blockSize,
       Progressable progress)
       throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -726,6 +733,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public boolean rename(Path src, Path dst) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -778,6 +786,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public boolean delete(Path hadoopPath, boolean recursive) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -824,6 +833,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public FileStatus[] listStatus(Path hadoopPath) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -864,6 +874,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public boolean mkdirs(Path hadoopPath, FsPermission permission) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -899,6 +910,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public FileStatus getFileStatus(Path hadoopPath) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -931,6 +943,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
    * <p>This is an experimental API can can change without notice.
    */
   public FileStatus getFileStatusWithHint(Path hadoopPath, Configuration hint) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -975,6 +988,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public FileStatus[] globStatus(Path pathPattern, PathFilter filter) throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_GLOB_STATUS);
     checkOpen();
 
@@ -1068,6 +1082,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public byte[] getXAttr(Path path, String name) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -1093,6 +1108,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public Map<String, byte[]> getXAttrs(Path path) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -1118,6 +1134,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public Map<String, byte[]> getXAttrs(Path path, List<String> names) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -1147,6 +1164,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public List<String> listXAttrs(Path path) throws IOException {
+    InvocationIdContext.setInvocationId();
     return trackDurationWithTracing(
         instrumentation,
         globalStorageStatistics,
@@ -1324,6 +1342,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public CompletableFuture<FSDataInputStream> openFileWithOptions(
       Path hadoopPath, OpenFileParameters parameters) throws IOException {
+    InvocationIdContext.setInvocationId();
     checkNotNull(hadoopPath, "hadoopPath should not be null");
     checkOpen();
     logger.atFiner().log("Path to be opened: %s, parameters: %s ", hadoopPath, parameters);
@@ -1366,6 +1385,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public FSDataOutputStream append(Path hadoopPath, int bufferSize, Progressable progress)
       throws IOException {
+    InvocationIdContext.setInvocationId();
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
     logger.atFiner().log(
         "append(hadoopPath: %s, bufferSize: %d [ignored])", hadoopPath, bufferSize);
@@ -1391,6 +1411,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
    */
   @Override
   public void concat(Path tgt, Path[] srcs) throws IOException {
+    InvocationIdContext.setInvocationId();
     logger.atFiner().log("concat(tgt: %s, srcs: %s)", tgt, lazy(() -> Arrays.toString(srcs)));
 
     checkArgument(srcs.length > 0, "srcs must have at least one source");
