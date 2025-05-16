@@ -1017,6 +1017,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public Token<?> getDelegationToken(String renewer) throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_GET_DELEGATION_TOKEN);
     Token<?> result = null;
     if (delegationTokens != null) {
@@ -1030,6 +1031,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public void copyFromLocalFile(boolean delSrc, boolean overwrite, Path[] srcs, Path dst)
       throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_COPY_FROM_LOCAL_FILE);
     logger.atFiner().log(
         "copyFromLocalFile(delSrc: %b, overwrite: %b, %d srcs, dst: %s)",
@@ -1040,6 +1042,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public void copyFromLocalFile(boolean delSrc, boolean overwrite, Path src, Path dst)
       throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_COPY_FROM_LOCAL_FILE);
 
     logger.atFiner().log(
@@ -1050,6 +1053,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public FileChecksum getFileChecksum(Path hadoopPath) throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_GET_FILE_CHECKSUM);
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
 
@@ -1070,12 +1074,14 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public boolean exists(Path f) throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_EXISTS);
     return super.exists(f);
   }
 
   @Override
   public RemoteIterator<LocatedFileStatus> listLocatedStatus(Path f) throws IOException {
+    InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_LIST_LOCATED_STATUS);
     return super.listLocatedStatus(f);
   }
