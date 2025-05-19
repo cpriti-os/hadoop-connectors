@@ -95,8 +95,8 @@ public class RetryHttpInitializer implements HttpRequestInitializer {
     HttpHeaders headers = request.getHeaders();
     if (isNullOrEmpty(headers.getUserAgent()) && !isNullOrEmpty(options.getDefaultUserAgent())) {
       logger.atFiner().log(
-          "Request is missing a user-agent header, adding default value of '%s'",
-          options.getDefaultUserAgent());
+          "%s: Request is missing a user-agent header, adding default value of '%s'",
+          InvocationIdContext.getInvocationId(), options.getDefaultUserAgent());
       headers.setUserAgent(options.getDefaultUserAgent());
     }
     headers.putAll(options.getHttpHeaders());
@@ -227,8 +227,8 @@ public class RetryHttpInitializer implements HttpRequestInitializer {
         if (redirectLocation.contains("+")) {
           String escapedLocation = redirectLocation.replace("+", "%2B");
           logger.atFine().log(
-              "Redirect path '%s' contains unescaped '+', replacing with '%%2B': '%s'",
-              redirectLocation, escapedLocation);
+              "%s: Redirect path '%s' contains unescaped '+', replacing with '%%2B': '%s'",
+              InvocationIdContext.getInvocationId(), redirectLocation, escapedLocation);
           response.getHeaders().setLocation(escapedLocation);
         }
       }
@@ -251,7 +251,9 @@ public class RetryHttpInitializer implements HttpRequestInitializer {
         throws IOException {
       // We sadly don't get anything helpful to see if this is something we want to log.
       // As a result we'll turn down the logging level to debug.
-      logger.atFine().log("Encountered an IOException when accessing URL %s", httpRequest.getUrl());
+      logger.atFine().log(
+          "%s: Encountered an IOException when accessing URL %s",
+          InvocationIdContext.getInvocationId(), httpRequest.getUrl());
       tracker.trackIOException();
 
       long backoffStartTime = System.currentTimeMillis();

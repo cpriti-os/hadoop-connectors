@@ -4,6 +4,7 @@ import static com.google.auth.http.AuthHttpConstants.AUTHORIZATION;
 
 import com.google.cloud.hadoop.util.AccessBoundary;
 import com.google.cloud.hadoop.util.AccessBoundary.Action;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.GoogleLogger;
@@ -77,7 +78,9 @@ class GoogleCloudStorageClientGrpcDownscopingInterceptor implements ClientInterc
   @Override
   public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
       MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
-    logger.atFinest().log("interceptCall(): method=%s", method.getFullMethodName());
+    logger.atFinest().log(
+        "%s: interceptCall(): method=%s",
+        InvocationIdContext.getInvocationId(), method.getFullMethodName());
     return new SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
       private int flowControlRequests;
       private final String methodName = method.getFullMethodName();
@@ -90,7 +93,8 @@ class GoogleCloudStorageClientGrpcDownscopingInterceptor implements ClientInterc
         this.responseListener = responseListener;
         this.headers = headers;
 
-        logger.atFinest().log("start(): method=%s", methodName);
+        logger.atFinest().log(
+            "%s: start(): method=%s", InvocationIdContext.getInvocationId(), methodName);
       }
 
       @Override
@@ -123,7 +127,8 @@ class GoogleCloudStorageClientGrpcDownscopingInterceptor implements ClientInterc
 
         String token = getDownScopedToken(message);
         if (token != null) {
-          logger.atFinest().log("Setting down-scoped auth token");
+          logger.atFinest().log(
+              "%s: Setting down-scoped auth token", InvocationIdContext.getInvocationId());
           headers.put(AUTH_KEY, "Bearer " + token);
         }
       }
@@ -208,7 +213,8 @@ class GoogleCloudStorageClientGrpcDownscopingInterceptor implements ClientInterc
 
       private String getDownscopedToken(List<AccessBoundary> accessBoundaries) {
         logger.atFinest().log(
-            "Getting downscoped token for %s; method=%s", accessBoundaries, methodName);
+            "%s: Getting downscoped token for %s; method=%s",
+            InvocationIdContext.getInvocationId(), accessBoundaries, methodName);
         if (accessBoundaries.size() == 0) {
           return null;
         }

@@ -64,7 +64,7 @@ public class LoggingMediaHttpUploaderProgressListener implements MediaHttpUpload
       case INITIATION_STARTED:
         startTime = currentTime;
         prevTime = currentTime;
-        logger.atFine().log("Uploading: %s", name);
+        logger.atFine().log("%s: Uploading: %s", InvocationIdContext.getInvocationId(), name);
         break;
       case MEDIA_IN_PROGRESS:
         // Limit messages to be emitted for in progress uploads.
@@ -76,15 +76,20 @@ public class LoggingMediaHttpUploaderProgressListener implements MediaHttpUpload
                 ((bytesUploaded - prevUploadedBytes) / BYTES_IN_MB)
                     / ((currentTime - prevTime) / 1000.0);
             logger.atFine().log(
-                "Uploading: %s Average Rate: %.3f MiB/s, Current Rate: %.3f MiB/s, Total: %.3f MiB",
-                name, averageRate, currentRate, megaBytesUploaded);
+                "%s: Uploading: %s Average Rate: %.3f MiB/s, Current Rate: %.3f MiB/s, Total: %.3f MiB",
+                InvocationIdContext.getInvocationId(),
+                name,
+                averageRate,
+                currentRate,
+                megaBytesUploaded);
           }
           prevTime = currentTime;
           prevUploadedBytes = bytesUploaded;
         }
         break;
       case MEDIA_COMPLETE:
-        logger.atFine().log("Finished Uploading: %s", name);
+        logger.atFine().log(
+            "%s: Finished Uploading: %s", InvocationIdContext.getInvocationId(), name);
         break;
       default:
     }

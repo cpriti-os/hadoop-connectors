@@ -40,6 +40,7 @@ import com.google.cloud.hadoop.gcsio.GoogleCloudStorageStatistics;
 import com.google.cloud.hadoop.gcsio.StatisticTypeEnum;
 import com.google.cloud.hadoop.util.ITraceFactory;
 import com.google.cloud.hadoop.util.ITraceOperation;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.base.Stopwatch;
 import com.google.common.flogger.GoogleLogger;
 import com.google.common.flogger.LazyArgs;
@@ -116,7 +117,9 @@ public class GhfsGlobalStorageStatistics extends StorageStatistics {
       long elapsedMs = stopwatch.elapsed().toMillis();
       stats.updateStats(statistic, elapsedMs, context);
       stats.updateConnectorHadoopApiTime(elapsedMs);
-      logger.atFine().log("%s(%s); elapsed=%s", statistic.getSymbol(), context, elapsedMs);
+      logger.atFine().log(
+          "%s: %s(%s); elapsed=%s",
+          InvocationIdContext.getInvocationId(), statistic.getSymbol(), context, elapsedMs);
 
       // Periodically log the metrics. Once every 5 minutes.
       logger.atInfo().atMostEvery(5, TimeUnit.MINUTES).log(
@@ -276,7 +279,8 @@ public class GhfsGlobalStorageStatistics extends StorageStatistics {
           && opsCount.get(symbol).get() > 0
           && stopwatch.elapsed().getSeconds() > WARMUP_THRESHOLD_SEC) {
         logger.atInfo().log(
-            "Detected potential high latency for operation %s. latencyMs=%s; previousMaxLatencyMs=%s; operationCount=%s; context=%s; thread=%s",
+            "%s: Detected potential high latency for operation %s. latencyMs=%s; previousMaxLatencyMs=%s; operationCount=%s; context=%s; thread=%s",
+            InvocationIdContext.getInvocationId(),
             symbol,
             maxDurationMs,
             maxVal.get(),

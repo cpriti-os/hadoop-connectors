@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import java.net.URI;
 import java.util.Objects;
@@ -289,7 +290,9 @@ public class StorageResourceId {
    */
   public static StorageResourceId fromUriPath(
       URI path, boolean allowEmptyObjectName, long generationId) {
-    logger.atFiner().log("fromUriPath('%s', %s)", path, allowEmptyObjectName);
+    logger.atFiner().log(
+        "%s: fromUriPath('%s', %s)",
+        InvocationIdContext.getInvocationId(), path, allowEmptyObjectName);
     checkNotNull(path);
 
     if (!GoogleCloudStorageFileSystem.SCHEME.equals(path.getScheme())) {

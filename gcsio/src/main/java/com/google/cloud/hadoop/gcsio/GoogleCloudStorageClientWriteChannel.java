@@ -19,6 +19,7 @@ package com.google.cloud.hadoop.gcsio;
 import static com.google.cloud.hadoop.gcsio.GoogleCloudStorageImpl.encodeMetadata;
 
 import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.BlobWriteSession;
@@ -131,8 +132,8 @@ class GoogleCloudStorageClientWriteChannel implements WritableByteChannel {
   private int writeInternal(ByteBuffer byteBuffer) throws IOException {
     int bytesWritten = writableByteChannel.write(byteBuffer);
     logger.atFinest().log(
-        "%d bytes were written out of provided buffer of capacity %d",
-        bytesWritten, byteBuffer.limit());
+        "%s: %d bytes were written out of provided buffer of capacity %d",
+        InvocationIdContext.getInvocationId(), bytesWritten, byteBuffer.limit());
     return bytesWritten;
   }
 

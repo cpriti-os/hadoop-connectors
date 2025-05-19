@@ -18,6 +18,7 @@ package com.google.cloud.hadoop.gcsio;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -186,7 +187,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
 
     public void statusOnClose(Status status) {
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getRequestContext()
                   .put(GoogleCloudStorageTracingFields.STATUS.name, status)
@@ -244,7 +246,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
               request.getWriteObjectSpec().getResource().getName(),
               request.getWriteObjectSpec().getIfGenerationMatch());
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getRequestTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.RESOURCE.name, resourceId)
@@ -255,7 +258,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
     public void logResponseMessage(MessageLite message) {
       StartResumableWriteResponse response = (StartResumableWriteResponse) message;
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getResponseTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.RESOURCE.name, resourceId)
@@ -280,7 +284,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
         updateUploadId(request.getUploadId());
       }
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getRequestTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.UPLOAD_ID.name, request.getUploadId())
@@ -298,7 +303,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
 
       WriteObjectResponse response = (WriteObjectResponse) message;
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getResponseTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.UPLOAD_ID.name, streamUploadId)
@@ -344,7 +350,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
 
       updateReadRequestContext(request);
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getRequestTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.RESOURCE.name, resourceId)
@@ -358,7 +365,8 @@ public class GoogleCloudStorageClientGrpcTracingInterceptor implements ClientInt
       ReadObjectResponse response = (ReadObjectResponse) message;
       int bytesRead = response.getChecksummedData().getContent().size();
       logger.atInfo().log(
-          "%s",
+          "%s: %s",
+          InvocationIdContext.getInvocationId(),
           toJson(
               getResponseTrackingInfo()
                   .put(GoogleCloudStorageTracingFields.RESOURCE.name, resourceId)

@@ -19,6 +19,7 @@ package com.google.cloud.hadoop.gcsio;
 import static com.google.cloud.hadoop.gcsio.GoogleCloudStorage.PATH_DELIMITER;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.base.CharMatcher;
 import com.google.common.flogger.GoogleLogger;
 
@@ -76,7 +77,9 @@ public final class StringPaths {
    * @param allowEmptyObjectName If true, a missing object name is not considered invalid.
    */
   static String validateObjectName(String objectName, boolean allowEmptyObjectName) {
-    logger.atFiner().log("validateObjectName('%s', %s)", objectName, allowEmptyObjectName);
+    logger.atFiner().log(
+        "%s: validateObjectName('%s', %s)",
+        InvocationIdContext.getInvocationId(), objectName, allowEmptyObjectName);
 
     if (isNullOrEmpty(objectName) || objectName.equals(PATH_DELIMITER)) {
       if (allowEmptyObjectName) {
@@ -104,7 +107,8 @@ public final class StringPaths {
       objectName = objectName.substring(1);
     }
 
-    logger.atFiner().log("validateObjectName -> '%s'", objectName);
+    logger.atFiner().log(
+        "%s: validateObjectName -> '%s'", InvocationIdContext.getInvocationId(), objectName);
     return objectName;
   }
 

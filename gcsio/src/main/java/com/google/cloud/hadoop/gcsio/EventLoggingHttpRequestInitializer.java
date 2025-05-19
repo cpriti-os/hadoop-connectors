@@ -28,6 +28,7 @@ import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpResponse;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
@@ -105,7 +106,8 @@ public class EventLoggingHttpRequestInitializer implements HttpRequestInitialize
   }
 
   private void logDetails(Map<String, Object> jsonMap) {
-    logger.atInfo().log("%s", LazyArgs.lazy(() -> gson.toJson(jsonMap)));
+    logger.atInfo().log(
+        "%s: %s", InvocationIdContext.getInvocationId(), LazyArgs.lazy(() -> gson.toJson(jsonMap)));
   }
 
   private static ImmutableMap<String, Object> filterMap(

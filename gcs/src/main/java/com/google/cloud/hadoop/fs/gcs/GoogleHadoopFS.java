@@ -16,6 +16,7 @@
 
 package com.google.cloud.hadoop.fs.gcs;
 
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import java.io.IOException;
 import java.net.URI;
@@ -91,7 +92,9 @@ public class GoogleHadoopFS extends AbstractFileSystem {
         createParent);
     if (!createParent) {
       // TODO: don't ignore 'createParent' flag
-      logger.atFine().log("Ignoring createParent=false. Creating parents anyways.");
+      logger.atFine().log(
+          "%s: Ignoring createParent=false. Creating parents anyways.",
+          InvocationIdContext.getInvocationId());
     }
     // AbstractFileSystems rely on permission to not overwrite.
     boolean overwriteFile = true;
@@ -102,7 +105,8 @@ public class GoogleHadoopFS extends AbstractFileSystem {
   @Override
   public int getUriDefaultPort() {
     int defaultPort = ghfs.getDefaultPort();
-    logger.atFiner().log("getUriDefaultPort(): %d", defaultPort);
+    logger.atFiner().log(
+        "%s: getUriDefaultPort(): %d", InvocationIdContext.getInvocationId(), defaultPort);
     return defaultPort;
   }
 
@@ -139,95 +143,113 @@ public class GoogleHadoopFS extends AbstractFileSystem {
   @SuppressWarnings("deprecation")
   @Override
   public FsServerDefaults getServerDefaults() throws IOException {
-    logger.atFiner().log("getServerDefaults()");
+    logger.atFiner().log("%s: getServerDefaults()", InvocationIdContext.getInvocationId());
     return ghfs.getServerDefaults();
   }
 
   @Override
   public void mkdir(Path dir, FsPermission permission, boolean createParent) throws IOException {
     logger.atFiner().log(
-        "mkdir(dir: %s, permission: %s, createParent %b)", dir, permission, createParent);
+        "%s: mkdir(dir: %s, permission: %s, createParent %b)",
+        InvocationIdContext.getInvocationId(), dir, permission, createParent);
     if (!createParent) {
-      logger.atFine().log("Ignoring createParent=false. Creating parents anyways.");
+      logger.atFine().log(
+          "%s: Ignoring createParent=false. Creating parents anyways.",
+          InvocationIdContext.getInvocationId());
     }
     ghfs.mkdirs(dir, permission);
   }
 
   @Override
   public boolean delete(Path f, boolean recursive) throws IOException {
-    logger.atFiner().log("delete(path: %s, recursive: %b)", f, recursive);
+    logger.atFiner().log(
+        "%s: delete(path: %s, recursive: %b)", InvocationIdContext.getInvocationId(), f, recursive);
     return ghfs.delete(f, recursive);
   }
 
   @Override
   public FSDataInputStream open(Path f, int bufferSize) throws IOException {
-    logger.atFiner().log("open(path: %s, bufferSize: %d)", f, bufferSize);
+    logger.atFiner().log(
+        "%s: open(path: %s, bufferSize: %d)", InvocationIdContext.getInvocationId(), f, bufferSize);
     return ghfs.open(f, bufferSize);
   }
 
   @Override
   public boolean setReplication(Path f, short replication) throws IOException {
-    logger.atFiner().log("setReplication(path: %s, replication: %d)", f, replication);
+    logger.atFiner().log(
+        "%s: setReplication(path: %s, replication: %d)",
+        InvocationIdContext.getInvocationId(), f, replication);
     return ghfs.setReplication(f, replication);
   }
 
   @Override
   public void renameInternal(Path src, Path dst) throws IOException {
-    logger.atFiner().log("renameInternal(src: %s, dst: %s)", src, dst);
+    logger.atFiner().log(
+        "%s: renameInternal(src: %s, dst: %s)", InvocationIdContext.getInvocationId(), src, dst);
     ghfs.renameInternal(src, dst);
   }
 
   @Override
   public void setPermission(Path f, FsPermission permission) throws IOException {
-    logger.atFiner().log("setPermission(path: %s, permission: %s)", f, permission);
+    logger.atFiner().log(
+        "%s: setPermission(path: %s, permission: %s)",
+        InvocationIdContext.getInvocationId(), f, permission);
     ghfs.setPermission(f, permission);
   }
 
   @Override
   public void setOwner(Path f, String username, String groupname) throws IOException {
-    logger.atFiner().log("setOwner(path: %s, username: %s, groupname: %s)", f, username, groupname);
+    logger.atFiner().log(
+        "%s: setOwner(path: %s, username: %s, groupname: %s)",
+        InvocationIdContext.getInvocationId(), f, username, groupname);
     ghfs.setOwner(f, username, groupname);
   }
 
   @Override
   public void setTimes(Path f, long mtime, long atime) throws IOException {
-    logger.atFiner().log("setTimes(path: %s, mtime: %d, atime: %d)", f, mtime, atime);
+    logger.atFiner().log(
+        "%s: setTimes(path: %s, mtime: %d, atime: %d)",
+        InvocationIdContext.getInvocationId(), f, mtime, atime);
     ghfs.setTimes(f, mtime, atime);
   }
 
   @Override
   public FileChecksum getFileChecksum(Path f) throws IOException {
-    logger.atFiner().log("getFileChecksum(path: %s)", f);
+    logger.atFiner().log("%s: getFileChecksum(path: %s)", InvocationIdContext.getInvocationId(), f);
     return ghfs.getFileChecksum(f);
   }
 
   @Override
   public FileStatus getFileStatus(Path f) throws IOException {
-    logger.atFiner().log("getFileStatus(path: %s)", f);
+    logger.atFiner().log("%s: getFileStatus(path: %s)", InvocationIdContext.getInvocationId(), f);
     return ghfs.getFileStatus(f);
   }
 
   @Override
   public BlockLocation[] getFileBlockLocations(Path f, long start, long len) throws IOException {
-    logger.atFiner().log("getFileBlockLocations(path: %s, start: %d, len: %d)", f, start, len);
+    logger.atFiner().log(
+        "%s: getFileBlockLocations(path: %s, start: %d, len: %d)",
+        InvocationIdContext.getInvocationId(), f, start, len);
     return ghfs.getFileBlockLocations(f, start, len);
   }
 
   @Override
   public FsStatus getFsStatus() throws IOException {
-    logger.atFiner().log("getStatus()");
+    logger.atFiner().log("%s: getStatus()", InvocationIdContext.getInvocationId());
     return ghfs.getStatus();
   }
 
   @Override
   public FileStatus[] listStatus(Path f) throws IOException {
-    logger.atFiner().log("listStatus(path: %s)", f);
+    logger.atFiner().log("%s: listStatus(path: %s)", InvocationIdContext.getInvocationId(), f);
     return ghfs.listStatus(f);
   }
 
   @Override
   public void setVerifyChecksum(boolean verifyChecksum) {
-    logger.atFiner().log("setVerifyChecksum(verifyChecksum: %b)", verifyChecksum);
+    logger.atFiner().log(
+        "%s: setVerifyChecksum(verifyChecksum: %b)",
+        InvocationIdContext.getInvocationId(), verifyChecksum);
     ghfs.setVerifyChecksum(verifyChecksum);
   }
 }

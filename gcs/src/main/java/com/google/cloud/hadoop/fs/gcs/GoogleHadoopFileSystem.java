@@ -58,9 +58,9 @@ import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
 import com.google.cloud.hadoop.util.HadoopCredentialsConfiguration;
 import com.google.cloud.hadoop.util.HadoopCredentialsConfiguration.AccessTokenProviderCredentials;
 import com.google.cloud.hadoop.util.ITraceFactory;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.cloud.hadoop.util.PropertyUtil;
 import com.google.cloud.hadoop.util.TraceFactory;
-import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.cloud.hadoop.util.interceptors.LoggingInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
@@ -281,7 +281,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   public void initialize(URI path, Configuration config) throws IOException {
-    logger.atFiner().log("initialize(path: %s, config: %s)", path, config);
+    logger.atFiner().log(
+        "%s: initialize(path: %s, config: %s)",
+        InvocationIdContext.getInvocationId(), path, config);
 
     checkArgument(path != null, "path must not be null");
     checkArgument(config != null, "config must not be null");
@@ -307,7 +309,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       rootLogger.addHandler(loggingInterceptor);
     }
 
-    logger.atFiner().log("initialize(path: %s, config: %s)", path, config);
+    logger.atFiner().log(
+        "%s: initialize(path: %s, config: %s)",
+        InvocationIdContext.getInvocationId(), path, config);
     globAlgorithm = GCS_GLOB_ALGORITHM.get(config, config::getEnum);
     checksumType = GCS_FILE_CHECKSUM_TYPE.get(config, config::getEnum);
     defaultBlockSize = BLOCK_SIZE.get(config, config::getLong);
@@ -343,7 +347,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
         UriPaths.fromStringPathComponents(
             rootBucket, /* objectName= */ null, /* allowEmptyObjectName= */ true);
     fsRoot = new Path(rootUri);
-    logger.atFiner().log("Configured FS root: '%s'", fsRoot);
+    logger.atFiner().log(
+        "%s: Configured FS root: '%s'", InvocationIdContext.getInvocationId(), fsRoot);
   }
 
   private void initializeWorkingDirectory(Configuration config) {
@@ -357,12 +362,16 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     setWorkingDirectory(
         isNullOrEmpty(configWorkingDirectory) ? fsRoot : new Path(configWorkingDirectory));
     logger.atFiner().log(
-        "Configured working directory: %s = %s",
-        GCS_WORKING_DIRECTORY.getKey(), getWorkingDirectory());
+        "%s: Configured working directory: %s = %s",
+        InvocationIdContext.getInvocationId(),
+        GCS_WORKING_DIRECTORY.getKey(),
+        getWorkingDirectory());
   }
 
   private void initializeDelegationTokenSupport(Configuration config) throws IOException {
-    logger.atFiner().log("initializeDelegationTokenSupport(config: %s)", config);
+    logger.atFiner().log(
+        "%s: initializeDelegationTokenSupport(config: %s)",
+        InvocationIdContext.getInvocationId(), config);
     // Load delegation token binding, if support is configured
     if (isNullOrEmpty(DELEGATION_TOKEN_BINDING_CLASS.get(config, config::get))) {
       return;
@@ -376,7 +385,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     delegationTokens = dts;
     if (delegationTokens.isBoundToDT()) {
       logger.atFine().log(
-          "initializeDelegationTokenSupport(config: %s): using existing delegation token", config);
+          "%s: initializeDelegationTokenSupport(config: %s): using existing delegation token",
+          InvocationIdContext.getInvocationId(), config);
     }
   }
 
@@ -506,7 +516,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
   @Override
   protected void checkPath(Path path) {
-    logger.atFiner().log("checkPath(path: %s)", path);
+    logger.atFiner().log("%s: checkPath(path: %s)", InvocationIdContext.getInvocationId(), path);
     // Validate scheme
     URI uri = path.toUri();
 
@@ -537,7 +547,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
    * provided at initialization time.
    */
   Path getHadoopPath(URI gcsPath) {
-    logger.atFiner().log("getHadoopPath(gcsPath: %s)", gcsPath);
+    logger.atFiner().log(
+        "%s: getHadoopPath(gcsPath: %s)", InvocationIdContext.getInvocationId(), gcsPath);
 
     // Handle root. Delegate to getGcsPath on "gs:/" to resolve the appropriate gs://<bucket> URI.
     if (gcsPath.equals(getGcsPath(fsRoot))) {
@@ -558,7 +569,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
         new Path(
             fsRoot,
             new Path(/* schema= */ null, /* authority= */ null, resourceId.getObjectName()));
-    logger.atFiner().log("getHadoopPath(gcsPath: %s): %s", gcsPath, hadoopPath);
+    logger.atFiner().log(
+        "%s: getHadoopPath(gcsPath: %s): %s",
+        InvocationIdContext.getInvocationId(), gcsPath, hadoopPath);
     return hadoopPath;
   }
 
@@ -567,7 +580,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
    * appropriate GCS path which is compatible with the underlying GcsFs.
    */
   URI getGcsPath(Path hadoopPath) {
-    logger.atFiner().log("getGcsPath(hadoopPath: %s)", hadoopPath);
+    logger.atFiner().log(
+        "%s: getGcsPath(hadoopPath: %s)", InvocationIdContext.getInvocationId(), hadoopPath);
 
     // Convert to fully qualified absolute path; the Path object will call back to get our current
     // workingDirectory as part of fully resolving the path.
@@ -584,7 +598,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     String rootBucket = fsRoot.toUri().getAuthority();
     URI gcsPath =
         UriPaths.fromStringPathComponents(rootBucket, objectName, /* allowEmptyObjectName= */ true);
-    logger.atFiner().log("getGcsPath(hadoopPath: %s): %s", hadoopPath, gcsPath);
+    logger.atFiner().log(
+        "%s: getGcsPath(hadoopPath: %s): %s",
+        InvocationIdContext.getInvocationId(), hadoopPath, gcsPath);
     return gcsPath;
   }
 
@@ -606,7 +622,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
           checkArgument(hadoopPath != null, "hadoopPath must not be null");
           checkOpen();
           logger.atFiner().log(
-              "open(hadoopPath: %s, bufferSize: %d [ignored])", hadoopPath, bufferSize);
+              "%s: open(hadoopPath: %s, bufferSize: %d [ignored])",
+              InvocationIdContext.getInvocationId(), hadoopPath, bufferSize);
           URI gcsPath = getGcsPath(hadoopPath);
           return new FSDataInputStream(GoogleHadoopFSInputStream.create(this, gcsPath, statistics));
         });
@@ -615,7 +632,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   /** This is an experimental API and can change without notice. */
   public FSDataInputStream open(FileStatus status) throws IOException {
     InvocationIdContext.setInvocationId();
-    logger.atFine().log("openWithStatus(%s)", status);
+    logger.atFine().log("%s: openWithStatus(%s)", InvocationIdContext.getInvocationId(), status);
 
     if (!GoogleHadoopFileStatus.class.isAssignableFrom(status.getClass())) {
       throw new IllegalArgumentException(
@@ -666,8 +683,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
           checkOpen();
 
           logger.atFiner().log(
-              "create(hadoopPath: %s, overwrite: %b, bufferSize: %d [ignored])",
-              hadoopPath, overwrite, bufferSize);
+              "%s: create(hadoopPath: %s, overwrite: %b, bufferSize: %d [ignored])",
+              InvocationIdContext.getInvocationId(), hadoopPath, overwrite, bufferSize);
 
           FSDataOutputStream response =
               new FSDataOutputStream(
@@ -750,7 +767,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
           // derived
           // classes may not have filesystem roots equal to the global root.
           if (this.makeQualified(src).equals(fsRoot)) {
-            logger.atFiner().log("rename(src: %s, dst: %s): false [src is a root]", src, dst);
+            logger.atFiner().log(
+                "%s: rename(src: %s, dst: %s): false [src is a root]",
+                InvocationIdContext.getInvocationId(), src, dst);
             return false;
           }
           try {
@@ -817,7 +836,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
             }
             if (result) {
               logger.atFiner().log(
-                  "delete(hadoopPath: %s, recursive: %b): true", hadoopPath, recursive);
+                  "%s: delete(hadoopPath: %s, recursive: %b): true",
+                  InvocationIdContext.getInvocationId(), hadoopPath, recursive);
             }
             response = result;
 
@@ -845,7 +865,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
           checkOpen();
 
-          logger.atFiner().log("listStatus(hadoopPath: %s)", hadoopPath);
+          logger.atFiner().log(
+              "%s: listStatus(hadoopPath: %s)", InvocationIdContext.getInvocationId(), hadoopPath);
 
           URI gcsPath = getGcsPath(hadoopPath);
           List<FileStatus> status;
@@ -900,7 +921,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
                     .initCause(faee);
           }
           logger.atFiner().log(
-              "mkdirs(hadoopPath: %s, permission: %s): true", hadoopPath, permission);
+              "%s: mkdirs(hadoopPath: %s, permission: %s): true",
+              InvocationIdContext.getInvocationId(), hadoopPath, permission);
           boolean response = true;
 
           incrementStatistic(GhfsStatistic.DIRECTORIES_CREATED);
@@ -992,7 +1014,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     incrementStatistic(GhfsStatistic.INVOCATION_GLOB_STATUS);
     checkOpen();
 
-    logger.atFiner().log("globStatus(pathPattern: %s, filter: %s)", pathPattern, filter);
+    logger.atFiner().log(
+        "%s: globStatus(pathPattern: %s, filter: %s)",
+        InvocationIdContext.getInvocationId(), pathPattern, filter);
     // URI does not handle glob expressions nicely, for the purpose of
     // fully-qualifying a path we can URI-encode them.
     // Using toString() to avoid Path(URI) constructor.
@@ -1002,7 +1026,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     Path encodedFixedPath = getHadoopPath(getGcsPath(encodedPath));
     // Decode URI-encoded path back into a glob path.
     Path fixedPath = new Path(URI.create(encodedFixedPath.toString()));
-    logger.atFiner().log("fixed path pattern: %s => %s", pathPattern, fixedPath);
+    logger.atFiner().log(
+        "%s: fixed path pattern: %s => %s",
+        InvocationIdContext.getInvocationId(), pathPattern, fixedPath);
 
     if (globAlgorithm == GlobAlgorithm.CONCURRENT && couldUseFlatGlob(fixedPath)) {
       return concurrentGlobInternal(fixedPath, filter);
@@ -1024,7 +1050,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       result = delegationTokens.getBoundOrNewDT(renewer);
     }
 
-    logger.atFiner().log("getDelegationToken(renewer: %s): %s", renewer, result);
+    logger.atFiner().log(
+        "%s: getDelegationToken(renewer: %s): %s",
+        InvocationIdContext.getInvocationId(), renewer, result);
     return result;
   }
 
@@ -1034,8 +1062,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     InvocationIdContext.setInvocationId();
     incrementStatistic(GhfsStatistic.INVOCATION_COPY_FROM_LOCAL_FILE);
     logger.atFiner().log(
-        "copyFromLocalFile(delSrc: %b, overwrite: %b, %d srcs, dst: %s)",
-        delSrc, overwrite, srcs.length, dst);
+        "%s: copyFromLocalFile(delSrc: %b, overwrite: %b, %d srcs, dst: %s)",
+        InvocationIdContext.getInvocationId(), delSrc, overwrite, srcs.length, dst);
     super.copyFromLocalFile(delSrc, overwrite, srcs, dst);
   }
 
@@ -1046,8 +1074,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     incrementStatistic(GhfsStatistic.INVOCATION_COPY_FROM_LOCAL_FILE);
 
     logger.atFiner().log(
-        "copyFromLocalFile(delSrc: %b, overwrite: %b, src: %s, dst: %s)",
-        delSrc, overwrite, src, dst);
+        "%s: copyFromLocalFile(delSrc: %b, overwrite: %b, src: %s, dst: %s)",
+        InvocationIdContext.getInvocationId(), delSrc, overwrite, src, dst);
     super.copyFromLocalFile(delSrc, overwrite, src, dst);
   }
 
@@ -1068,7 +1096,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     }
     FileChecksum checksum = getFileChecksum(checksumType, fileInfo);
     logger.atFiner().log(
-        "getFileChecksum(hadoopPath: %s [gcsPath: %s]): %s", hadoopPath, gcsPath, checksum);
+        "%s: getFileChecksum(hadoopPath: %s [gcsPath: %s]): %s",
+        InvocationIdContext.getInvocationId(), hadoopPath, gcsPath, checksum);
     return checksum;
   }
 
@@ -1106,8 +1135,11 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
               attributes.containsKey(xAttrKey) ? getXAttrValue(attributes.get(xAttrKey)) : null;
 
           logger.atFiner().log(
-              "getXAttr(path: %s, name: %s): %s",
-              path, name, lazy(() -> xAttr == null ? "<null>" : new String(xAttr, UTF_8)));
+              "%s: getXAttr(path: %s, name: %s): %s",
+              InvocationIdContext.getInvocationId(),
+              path,
+              name,
+              lazy(() -> xAttr == null ? "<null>" : new String(xAttr, UTF_8)));
           return xAttr;
         });
   }
@@ -1133,7 +1165,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
                       HashMap::new,
                       (m, a) -> m.put(getXAttrName(a.getKey()), getXAttrValue(a.getValue())),
                       Map::putAll);
-          logger.atFiner().log("getXAttrs(path: %s): %s", path, xAttrs);
+          logger.atFiner().log(
+              "%s: getXAttrs(path: %s): %s", InvocationIdContext.getInvocationId(), path, xAttrs);
           return xAttrs;
         });
   }
@@ -1163,7 +1196,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
                     .collect(HashMap::new, (m, a) -> m.put(a.getKey(), a.getValue()), Map::putAll);
           }
 
-          logger.atFiner().log("getXAttrs(path: %s, names: %s): %s", path, names, xAttrs);
+          logger.atFiner().log(
+              "%s: getXAttrs(path: %s, names: %s): %s",
+              InvocationIdContext.getInvocationId(), path, names, xAttrs);
           return xAttrs;
         });
   }
@@ -1185,7 +1220,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
                   .filter(this::isXAttr)
                   .map(this::getXAttrName)
                   .collect(Collectors.toCollection(ArrayList::new));
-          logger.atFiner().log("listXAttrs(path: %s): %s", path, xAttrs);
+          logger.atFiner().log(
+              "%s: listXAttrs(path: %s): %s", InvocationIdContext.getInvocationId(), path, xAttrs);
           return xAttrs;
         });
   }
@@ -1301,7 +1337,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       result = new Path(uri.getScheme(), uri.getAuthority(), upath.substring(i));
     }
 
-    logger.atFiner().log("makeQualified(path: %s): %s", path, result);
+    logger.atFiner().log(
+        "%s: makeQualified(path: %s): %s", InvocationIdContext.getInvocationId(), path, result);
     return result;
   }
 
@@ -1315,7 +1352,7 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   protected int getDefaultPort() {
     int result = -1;
-    logger.atFiner().log("getDefaultPort(): %d", result);
+    logger.atFiner().log("%s: getDefaultPort(): %d", InvocationIdContext.getInvocationId(), result);
     return result;
   }
 
@@ -1351,7 +1388,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     InvocationIdContext.setInvocationId();
     checkNotNull(hadoopPath, "hadoopPath should not be null");
     checkOpen();
-    logger.atFiner().log("Path to be opened: %s, parameters: %s ", hadoopPath, parameters);
+    logger.atFiner().log(
+        "%s: Path to be opened: %s, parameters: %s ",
+        InvocationIdContext.getInvocationId(), hadoopPath, parameters);
 
     URI gcsPath = getGcsPath(hadoopPath);
     AbstractFSBuilderImpl.rejectUnknownMandatoryKeys(
@@ -1394,7 +1433,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     InvocationIdContext.setInvocationId();
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
     logger.atFiner().log(
-        "append(hadoopPath: %s, bufferSize: %d [ignored])", hadoopPath, bufferSize);
+        "%s: append(hadoopPath: %s, bufferSize: %d [ignored])",
+        InvocationIdContext.getInvocationId(), hadoopPath, bufferSize);
     URI filePath = getGcsPath(hadoopPath);
     return new FSDataOutputStream(
         new GoogleHadoopOutputStream(
@@ -1418,7 +1458,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public void concat(Path tgt, Path[] srcs) throws IOException {
     InvocationIdContext.setInvocationId();
-    logger.atFiner().log("concat(tgt: %s, srcs: %s)", tgt, lazy(() -> Arrays.toString(srcs)));
+    logger.atFiner().log(
+        "%s: concat(tgt: %s, srcs: %s)",
+        InvocationIdContext.getInvocationId(), tgt, lazy(() -> Arrays.toString(srcs)));
 
     checkArgument(srcs.length > 0, "srcs must have at least one source");
 
@@ -1429,7 +1471,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
 
     List<List<URI>> partitions =
         Lists.partition(srcPaths, GoogleCloudStorage.MAX_COMPOSE_OBJECTS - 1);
-    logger.atFiner().log("concat(tgt: %s, %d partitions: %s)", tgt, partitions.size(), partitions);
+    logger.atFiner().log(
+        "%s: concat(tgt: %s, %d partitions: %s)",
+        InvocationIdContext.getInvocationId(), tgt, partitions.size(), partitions);
     for (List<URI> partition : partitions) {
       // We need to include the target in the list of sources to compose since
       // the GCS FS compose operation will overwrite the target, whereas the Hadoop
@@ -1457,7 +1501,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     URI dstPath = getGcsPath(dst);
     getGcsFs().rename(srcPath, dstPath);
 
-    logger.atFiner().log("rename(src: %s, dst: %s): true", src, dst);
+    logger.atFiner().log(
+        "%s: rename(src: %s, dst: %s): true", InvocationIdContext.getInvocationId(), src, dst);
   }
 
   /**
@@ -1467,7 +1512,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
    */
   @Override
   public Path getWorkingDirectory() {
-    logger.atFiner().log("getWorkingDirectory(): %s", workingDirectory);
+    logger.atFiner().log(
+        "%s: getWorkingDirectory(): %s", InvocationIdContext.getInvocationId(), workingDirectory);
     return workingDirectory;
   }
 
@@ -1491,8 +1537,11 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
             reportedPermissions,
             userName);
     logger.atFiner().log(
-        "getGoogleHadoopFileStatus(path: %s, userName: %s): %s",
-        fileInfo.getPath(), userName, lazy(() -> fileStatusToString(status)));
+        "%s: getGoogleHadoopFileStatus(path: %s, userName: %s): %s",
+        InvocationIdContext.getInvocationId(),
+        fileInfo.getPath(),
+        userName,
+        lazy(() -> fileStatusToString(status)));
     return status;
   }
 
@@ -1507,8 +1556,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     // scheme for GCS.
     if (!getUri().getScheme().equals(SCHEME)) {
       logger.atFine().log(
-          "Flat glob is on, but doesn't work for scheme '%s', using default behavior.",
-          getUri().getScheme());
+          "%s: Flat glob is on, but doesn't work for scheme '%s', using default behavior.",
+          InvocationIdContext.getInvocationId(), getUri().getScheme());
       return false;
     }
 
@@ -1516,15 +1565,16 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     GlobPattern fullPattern = new GlobPattern(fixedPath.toString());
     if (!fullPattern.hasWildcard()) {
       logger.atFine().log(
-          "Flat glob is on, but Path '%s' has no wildcard, using default behavior.", fixedPath);
+          "%s: Flat glob is on, but Path '%s' has no wildcard, using default behavior.",
+          InvocationIdContext.getInvocationId(), fixedPath);
       return false;
     }
 
     // To use a flat glob, there must be an authority defined.
     if (isNullOrEmpty(fixedPath.toUri().getAuthority())) {
       logger.atFine().log(
-          "Flat glob is on, but Path '%s' has a empty authority, using default behavior.",
-          fixedPath);
+          "%s: Flat glob is on, but Path '%s' has a empty authority, using default behavior.",
+          InvocationIdContext.getInvocationId(), fixedPath);
       return false;
     }
 
@@ -1532,8 +1582,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     GlobPattern authorityPattern = new GlobPattern(fixedPath.toUri().getAuthority());
     if (authorityPattern.hasWildcard()) {
       logger.atFine().log(
-          "Flat glob is on, but Path '%s' has a wildcard authority, using default behavior.",
-          fixedPath);
+          "%s: Flat glob is on, but Path '%s' has a wildcard authority, using default behavior.",
+          InvocationIdContext.getInvocationId(), fixedPath);
       return false;
     }
 
@@ -1606,7 +1656,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     }
 
     // Get everything matching the non-glob prefix.
-    logger.atFiner().log("Listing everything with '%s' prefix", prefixUri);
+    logger.atFiner().log(
+        "%s: Listing everything with '%s' prefix",
+        InvocationIdContext.getInvocationId(), prefixUri);
     List<FileStatus> matchedStatuses = null;
     String pageToken = null;
     do {
@@ -1671,7 +1723,9 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
       URI parentPath = UriPaths.getParentPath(fileInfo.getPath());
       while (parentPath != null && !parentPath.equals(GoogleCloudStorageFileSystem.GCS_ROOT)) {
         if (!filePaths.contains(parentPath)) {
-          logger.atFiner().log("Adding fake entry for missing parent path '%s'", parentPath);
+          logger.atFiner().log(
+              "%s: Adding fake entry for missing parent path '%s'",
+              InvocationIdContext.getInvocationId(), parentPath);
           StorageResourceId id = StorageResourceId.fromUriPath(parentPath, true);
 
           GoogleCloudStorageItemInfo fakeItemInfo =
@@ -1697,7 +1751,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public Path getHomeDirectory() {
     Path result = new Path(fsRoot, "user/" + System.getProperty("user.name"));
-    logger.atFiner().log("getHomeDirectory(): %s", result);
+    logger.atFiner().log(
+        "%s: getHomeDirectory(): %s", InvocationIdContext.getInvocationId(), result);
     return result;
   }
 
@@ -1709,7 +1764,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public String getCanonicalServiceName() {
     String result = delegationTokens == null ? null : delegationTokens.getService().toString();
-    logger.atFiner().log("getCanonicalServiceName(): %s", result);
+    logger.atFiner().log(
+        "%s: getCanonicalServiceName(): %s", InvocationIdContext.getInvocationId(), result);
     return result;
   }
 
@@ -1751,26 +1807,30 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   public boolean deleteOnExit(Path f) throws IOException {
     checkOpen();
     boolean result = super.deleteOnExit(f);
-    logger.atFiner().log("deleteOnExit(path: %s): %b", f, result);
+    logger.atFiner().log(
+        "%s: deleteOnExit(path: %s): %b", InvocationIdContext.getInvocationId(), f, result);
     return result;
   }
 
   @Override
   protected void processDeleteOnExit() {
-    logger.atFiner().log("processDeleteOnExit()");
+    logger.atFiner().log("%s: processDeleteOnExit()", InvocationIdContext.getInvocationId());
     super.processDeleteOnExit();
   }
 
   @Override
   public ContentSummary getContentSummary(Path f) throws IOException {
     ContentSummary result = super.getContentSummary(f);
-    logger.atFiner().log("getContentSummary(path: %s): %b", f, result);
+    logger.atFiner().log(
+        "%s: getContentSummary(path: %s): %b", InvocationIdContext.getInvocationId(), f, result);
     return result;
   }
 
   @Override
   public void copyToLocalFile(boolean delSrc, Path src, Path dst) throws IOException {
-    logger.atFiner().log("copyToLocalFile(delSrc: %b, src: %s, dst: %s)", delSrc, src, dst);
+    logger.atFiner().log(
+        "%s: copyToLocalFile(delSrc: %b, src: %s, dst: %s)",
+        InvocationIdContext.getInvocationId(), delSrc, src, dst);
     super.copyToLocalFile(delSrc, src, dst);
   }
 
@@ -1778,21 +1838,22 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   public Path startLocalOutput(Path fsOutputFile, Path tmpLocalFile) throws IOException {
     Path result = super.startLocalOutput(fsOutputFile, tmpLocalFile);
     logger.atFiner().log(
-        "startLocalOutput(fsOutputFile: %s, tmpLocalFile: %s): %s",
-        fsOutputFile, tmpLocalFile, result);
+        "%s: startLocalOutput(fsOutputFile: %s, tmpLocalFile: %s): %s",
+        InvocationIdContext.getInvocationId(), fsOutputFile, tmpLocalFile, result);
     return result;
   }
 
   @Override
   public void completeLocalOutput(Path fsOutputFile, Path tmpLocalFile) throws IOException {
     logger.atFiner().log(
-        "startLocalOutput(fsOutputFile: %s, tmpLocalFile: %s)", fsOutputFile, tmpLocalFile);
+        "%s: startLocalOutput(fsOutputFile: %s, tmpLocalFile: %s)",
+        InvocationIdContext.getInvocationId(), fsOutputFile, tmpLocalFile);
     super.completeLocalOutput(fsOutputFile, tmpLocalFile);
   }
 
   @Override
   public void close() throws IOException {
-    logger.atFiner().log("close()");
+    logger.atFiner().log("%s: close()", InvocationIdContext.getInvocationId());
     super.close();
 
     // NB: We must *first* have the superclass close() before we close the underlying gcsFsSupplier
@@ -1834,13 +1895,14 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   @Override
   public long getUsed() throws IOException {
     long result = super.getUsed();
-    logger.atFiner().log("getUsed(): %s", result);
+    logger.atFiner().log("%s: getUsed(): %s", InvocationIdContext.getInvocationId(), result);
     return result;
   }
 
   @Override
   public long getDefaultBlockSize() {
-    logger.atFiner().log("getDefaultBlockSize(): %d", defaultBlockSize);
+    logger.atFiner().log(
+        "%s: getDefaultBlockSize(): %d", InvocationIdContext.getInvocationId(), defaultBlockSize);
     return defaultBlockSize;
   }
 
@@ -1849,30 +1911,40 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
     URI gcsPath = UriPaths.toDirectory(getGcsPath(hadoopPath));
     workingDirectory = getHadoopPath(gcsPath);
-    logger.atFiner().log("setWorkingDirectory(hadoopPath: %s): %s", hadoopPath, workingDirectory);
+    logger.atFiner().log(
+        "%s: setWorkingDirectory(hadoopPath: %s): %s",
+        InvocationIdContext.getInvocationId(), hadoopPath, workingDirectory);
   }
 
   @Override
   public void setVerifyChecksum(boolean verifyChecksum) {
-    logger.atFiner().log("setVerifyChecksum(verifyChecksum: %s)", verifyChecksum);
+    logger.atFiner().log(
+        "%s: setVerifyChecksum(verifyChecksum: %s)",
+        InvocationIdContext.getInvocationId(), verifyChecksum);
     super.setVerifyChecksum(verifyChecksum);
   }
 
   @Override
   public void setPermission(Path p, FsPermission permission) throws IOException {
-    logger.atFiner().log("setPermission(path: %s, permission: %s)", p, permission);
+    logger.atFiner().log(
+        "%s: setPermission(path: %s, permission: %s)",
+        InvocationIdContext.getInvocationId(), p, permission);
     super.setPermission(p, permission);
   }
 
   @Override
   public void setOwner(Path p, String username, String groupname) throws IOException {
-    logger.atFiner().log("setOwner(path: %s, username: %s, groupname: %s)", p, username, groupname);
+    logger.atFiner().log(
+        "%s: setOwner(path: %s, username: %s, groupname: %s)",
+        InvocationIdContext.getInvocationId(), p, username, groupname);
     super.setOwner(p, username, groupname);
   }
 
   @Override
   public void setTimes(Path p, long mtime, long atime) throws IOException {
-    logger.atFiner().log("setTimes(path: %s, mtime: %d, atime: %d)", p, mtime, atime);
+    logger.atFiner().log(
+        "%s: setTimes(path: %s, mtime: %d, atime: %d)",
+        InvocationIdContext.getInvocationId(), p, mtime, atime);
     super.setTimes(p, mtime, atime);
   }
 
@@ -1881,8 +1953,12 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   public void setXAttr(Path path, String name, byte[] value, EnumSet<XAttrSetFlag> flags)
       throws IOException {
     logger.atFiner().log(
-        "setXAttr(path: %s, name: %s, value %s, flags %s",
-        path, name, lazy(() -> new String(value, UTF_8)), flags);
+        "%s: setXAttr(path: %s, name: %s, value %s, flags %s",
+        InvocationIdContext.getInvocationId(),
+        path,
+        name,
+        lazy(() -> new String(value, UTF_8)),
+        flags);
     checkNotNull(path, "path should not be null");
     checkNotNull(name, "name should not be null");
     checkArgument(flags != null && !flags.isEmpty(), "flags should not be null or empty");
@@ -1916,7 +1992,8 @@ public class GoogleHadoopFileSystem extends FileSystem implements IOStatisticsSo
   /** {@inheritDoc} */
   @Override
   public void removeXAttr(Path path, String name) throws IOException {
-    logger.atFiner().log("removeXAttr(path: %s, name: %s)", path, name);
+    logger.atFiner().log(
+        "%s: removeXAttr(path: %s, name: %s)", InvocationIdContext.getInvocationId(), path, name);
     checkNotNull(path, "path should not be null");
     checkNotNull(name, "name should not be null");
 

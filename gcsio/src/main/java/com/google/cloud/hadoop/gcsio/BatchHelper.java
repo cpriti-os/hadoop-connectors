@@ -30,10 +30,7 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.StorageRequest;
-import com.google.cloud.hadoop.util.ApiErrorExtractor;
-import com.google.cloud.hadoop.util.ITraceOperation;
-import com.google.cloud.hadoop.util.ThreadTrace;
-import com.google.cloud.hadoop.util.TraceOperation;
+import com.google.cloud.hadoop.util.*;
 import com.google.common.flogger.GoogleLogger;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
@@ -263,7 +260,9 @@ public class BatchHelper {
       requestsExecutor.shutdown();
       try {
         if (!requestsExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
-          logger.atWarning().log("Forcibly shutting down batch helper thread pool.");
+          logger.atWarning().log(
+              "%s: Forcibly shutting down batch helper thread pool.",
+              InvocationIdContext.getInvocationId());
           requestsExecutor.shutdownNow();
         }
       } catch (InterruptedException e) {

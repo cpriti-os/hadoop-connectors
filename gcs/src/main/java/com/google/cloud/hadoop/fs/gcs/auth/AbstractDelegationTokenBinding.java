@@ -23,6 +23,7 @@ import com.google.cloud.hadoop.fs.gcs.DelegationTokenStatistics;
 import com.google.cloud.hadoop.fs.gcs.GhfsStatistic;
 import com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem;
 import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -133,7 +134,13 @@ public abstract class AbstractDelegationTokenBinding extends AbstractService {
     token.setService(service);
     noteTokenCreated(token);
 
-    logger.atFine().log("Created token %s with token identifier %s", token, tokenIdentifier);
+    logger.atFine().log(
+        "%s: %s: %s: Created token %s with token identifier %s",
+        InvocationIdContext.getInvocationId(),
+        InvocationIdContext.getInvocationId(),
+        InvocationIdContext.getInvocationId(),
+        token,
+        tokenIdentifier);
     return token;
   }
 

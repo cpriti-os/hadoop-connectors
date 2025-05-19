@@ -24,6 +24,7 @@ import static org.apache.hadoop.fs.VectoredReadUtils.validateRangeRequest;
 import com.google.cloud.hadoop.gcsio.FileInfo;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystem;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageReadOptions;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.GoogleLogger;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -126,7 +127,9 @@ public class VectoredIOImpl implements Closeable {
         long startTimer = System.currentTimeMillis();
         boundedThreadPool.submit(
             () -> {
-              logger.atFiner().log("Submitting range %s for execution.", sortedRange);
+              logger.atFiner().log(
+                  "%s: Submitting range %s for execution.",
+                  InvocationIdContext.getInvocationId(), sortedRange);
               readSingleRange(sortedRange, allocate, channelProvider);
               long endTimer = System.currentTimeMillis();
               storageStatistics.updateStats(
@@ -145,7 +148,9 @@ public class VectoredIOImpl implements Closeable {
         long startTimer = System.currentTimeMillis();
         boundedThreadPool.submit(
             () -> {
-              logger.atFiner().log("Submitting combinedRange %s for execution.", combinedFileRange);
+              logger.atFiner().log(
+                  "%s: Submitting combinedRange %s for execution.",
+                  InvocationIdContext.getInvocationId(), combinedFileRange);
               readCombinedRange(combinedFileRange, allocate, channelProvider);
               long endTimer = System.currentTimeMillis();
               storageStatistics.updateStats(
@@ -196,8 +201,11 @@ public class VectoredIOImpl implements Closeable {
       // making it ready for reading
       readContent.flip();
       logger.atFiner().log(
-          "Read combinedFileRange completed from range: %s, path: %s, readBytes: %d",
-          combinedFileRange, channelProvider.gcsPath, numRead);
+          "%s: Read combinedFileRange completed from range: %s, path: %s, readBytes: %d",
+          InvocationIdContext.getInvocationId(),
+          combinedFileRange,
+          channelProvider.gcsPath,
+          numRead);
       if (numRead < 0) {
         throw new EOFException(
             String.format(
@@ -211,11 +219,16 @@ public class VectoredIOImpl implements Closeable {
       // Note: child ranges will be sorted as well, given Range merge was called on sortedList
       for (FileRange child : combinedFileRange.getUnderlying()) {
         logger.atFiner().log(
-            "Populating childRange: %s from combinedRange:%s", child, combinedFileRange);
+            "%s: Populating childRange: %s from combinedRange:%s",
+            InvocationIdContext.getInvocationId(), child, combinedFileRange);
         int discardedBytes = (int) (child.getOffset() - currentPosition);
         logger.atFiner().log(
-            "Discarding %d bytes at offset: %d from read combinedRange %s while updating childRange: %s",
-            discardedBytes, currentPosition, combinedFileRange, child);
+            "%s: Discarding %d bytes at offset: %d from read combinedRange %s while updating childRange: %s",
+            InvocationIdContext.getInvocationId(),
+            discardedBytes,
+            currentPosition,
+            combinedFileRange,
+            child);
         totalBytesRead += discardedBytes + child.getLength();
         currentPosition = child.getOffset() + child.getLength();
 
@@ -287,7 +300,8 @@ public class VectoredIOImpl implements Closeable {
       range.getData().complete(dst);
       updateBytesRead(range.getLength());
       logger.atFiner().log(
-          "Read single range completed from range: %s, path: %s", range, channelProvider.gcsPath);
+          "%s: Read single range completed from range: %s, path: %s",
+          InvocationIdContext.getInvocationId(), range, channelProvider.gcsPath);
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
           "Exception while reading range:%s for path: %s", range, channelProvider.gcsPath);

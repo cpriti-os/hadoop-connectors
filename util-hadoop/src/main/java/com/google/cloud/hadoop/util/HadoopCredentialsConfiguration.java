@@ -315,8 +315,8 @@ public class HadoopCredentialsConfiguration {
               .setHttpTransportFactory(transport::get)
               .build();
       logger.atFine().log(
-          "Impersonating '%s' service account for '%s' user",
-          serviceAccountToImpersonate.get(), currentUser);
+          "%s: Impersonating '%s' service account for '%s' user",
+          InvocationIdContext.getInvocationId(), serviceAccountToImpersonate.get(), currentUser);
       return impersonatedCredentials;
     }
 

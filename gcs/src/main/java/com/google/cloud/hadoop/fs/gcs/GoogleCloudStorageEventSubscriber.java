@@ -26,6 +26,7 @@ import com.google.cloud.hadoop.util.GcsJsonApiEvent.EventType;
 import com.google.cloud.hadoop.util.GcsJsonApiEvent.RequestType;
 import com.google.cloud.hadoop.util.GcsRequestExecutionEvent;
 import com.google.cloud.hadoop.util.IGcsJsonApiEvent;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.flogger.GoogleLogger;
@@ -58,7 +59,8 @@ public class GoogleCloudStorageEventSubscriber {
   public static synchronized GoogleCloudStorageEventSubscriber getInstance(
       @Nonnull GhfsGlobalStorageStatistics storageStatistics) {
     if (INSTANCE == null) {
-      logger.atFiner().log("Subscriber class invoked for first time");
+      logger.atFiner().log(
+          "%s: Subscriber class invoked for first time", InvocationIdContext.getInvocationId());
       INSTANCE = new GoogleCloudStorageEventSubscriber(storageStatistics);
     }
     return INSTANCE;

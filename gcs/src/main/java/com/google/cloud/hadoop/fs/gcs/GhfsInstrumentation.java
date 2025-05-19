@@ -28,6 +28,7 @@ import static org.apache.hadoop.fs.statistics.impl.IOStatisticsBinding.iostatist
 
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageStatistics;
 import com.google.cloud.hadoop.gcsio.StatisticTypeEnum;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import java.io.Closeable;
 import java.net.URI;
@@ -163,7 +164,8 @@ public class GhfsInstrumentation
       metricsSourceActiveCounter--;
       int activeSources = metricsSourceActiveCounter;
       if (activeSources == 0) {
-        logger.atInfo().log("Shutting down metrics publisher");
+        logger.atInfo().log(
+            "%s: Shutting down metrics publisher", InvocationIdContext.getInvocationId());
         metricsSystem.publishMetricsNow();
         metricsSystem.shutdown();
         metricsSystem = null;

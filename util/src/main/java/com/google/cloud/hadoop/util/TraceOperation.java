@@ -139,7 +139,7 @@ public class TraceOperation implements ITraceOperation {
     this.trace.endOperationEvent(this.startEvent);
 
     if (this.shouldLog) {
-      logger.atInfo().log("%s", this.trace);
+      logger.atInfo().log("%s: %s", InvocationIdContext.getInvocationId(), this.trace);
     }
   }
 
@@ -153,7 +153,8 @@ public class TraceOperation implements ITraceOperation {
 
   private static void removeTracingForThread() {
     if (traceStack.get().isEmpty()) {
-      logger.atSevere().log("Did not expect the thread trace to be null");
+      logger.atSevere().log(
+          "%s: Did not expect the thread trace to be null", InvocationIdContext.getInvocationId());
       return;
     }
 

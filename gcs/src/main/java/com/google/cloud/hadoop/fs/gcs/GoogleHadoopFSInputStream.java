@@ -30,6 +30,7 @@ import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystemOptions;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystemOptions.ClientType;
 import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
 import com.google.cloud.hadoop.util.ITraceFactory;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import java.io.IOException;
 import java.net.URI;
@@ -92,7 +93,7 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
   static GoogleHadoopFSInputStream create(
       GoogleHadoopFileSystem ghfs, URI gcsPath, FileSystem.Statistics statistics)
       throws IOException {
-    logger.atFiner().log("create(gcsPath: %s)", gcsPath);
+    logger.atFiner().log("%s: create(gcsPath: %s)", InvocationIdContext.getInvocationId(), gcsPath);
     GoogleCloudStorageFileSystem gcsFs = ghfs.getGcsFs();
     FileInfo fileInfo = null;
     SeekableByteChannel channel;
@@ -130,7 +131,8 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
   static GoogleHadoopFSInputStream create(
       GoogleHadoopFileSystem ghfs, FileInfo fileInfo, FileSystem.Statistics statistics)
       throws IOException {
-    logger.atFiner().log("create(fileInfo: %s)", fileInfo);
+    logger.atFiner().log(
+        "%s: create(fileInfo: %s)", InvocationIdContext.getInvocationId(), fileInfo);
     GoogleCloudStorageFileSystem gcsFs = ghfs.getGcsFs();
     SeekableByteChannel channel =
         gcsFs.open(fileInfo, gcsFs.getOptions().getCloudStorageOptions().getReadChannelOptions());
@@ -143,7 +145,9 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
       FileInfo fileInfo,
       SeekableByteChannel channel,
       FileSystem.Statistics statistics) {
-    logger.atFiner().log("GoogleHadoopFSInputStream(gcsPath: %s)", gcsPath);
+    logger.atFiner().log(
+        "%s: GoogleHadoopFSInputStream(gcsPath: %s)",
+        InvocationIdContext.getInvocationId(), gcsPath);
     this.gcsPath = gcsPath;
     this.channel = channel;
     this.fileInfo = fileInfo;
@@ -248,7 +252,7 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
         () -> {
           long startTimeNs = System.nanoTime();
           checkNotClosed();
-          logger.atFiner().log("seek(%d)", pos);
+          logger.atFiner().log("%s: seek(%d)", InvocationIdContext.getInvocationId(), pos);
           long curPos = getPos();
           long diff = pos - curPos;
           if (diff > 0) {
@@ -283,11 +287,13 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
           if (!closed) {
             closed = true;
             try {
-              logger.atFiner().log("close(): %s", gcsPath);
+              logger.atFiner().log(
+                  "%s: close(): %s", InvocationIdContext.getInvocationId(), gcsPath);
               try {
                 if (channel != null) {
                   logger.atFiner().log(
-                      "Closing '%s' file with %d total bytes read", gcsPath, totalBytesRead);
+                      "%s: Closing '%s' file with %d total bytes read",
+                      InvocationIdContext.getInvocationId(), gcsPath, totalBytesRead);
                   channel.close();
                 }
               } catch (Exception e) {
@@ -335,7 +341,7 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
   public synchronized long getPos() throws IOException {
     checkNotClosed();
     long pos = channel.position();
-    logger.atFiner().log("getPos(): %d", pos);
+    logger.atFiner().log("%s: getPos(): %d", InvocationIdContext.getInvocationId(), pos);
     return pos;
   }
 
@@ -346,7 +352,8 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
    */
   @Override
   public boolean seekToNewSource(long targetPos) {
-    logger.atFiner().log("seekToNewSource(%d): false", targetPos);
+    logger.atFiner().log(
+        "%s: seekToNewSource(%d): false", InvocationIdContext.getInvocationId(), targetPos);
     return false;
   }
 

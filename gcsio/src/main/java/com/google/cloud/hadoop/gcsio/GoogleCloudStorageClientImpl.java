@@ -37,13 +37,9 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoBuilder;
-import com.google.cloud.hadoop.util.AccessBoundary;
-import com.google.cloud.hadoop.util.AsyncWriteChannelOptions;
+import com.google.cloud.hadoop.util.*;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions.PartFileCleanupType;
-import com.google.cloud.hadoop.util.ErrorTypeExtractor;
 import com.google.cloud.hadoop.util.ErrorTypeExtractor.ErrorType;
-import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
-import com.google.cloud.hadoop.util.GrpcErrorTypeExtractor;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -188,7 +184,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
       return super.create(resourceId, options);
     }
 
-    logger.atFiner().log("create(%s)", resourceId);
+    logger.atFiner().log("%s: create(%s)", InvocationIdContext.getInvocationId(), resourceId);
     checkArgument(
         resourceId.isStorageObject(), "Expected full StorageObject id, got %s", resourceId);
     // Update resourceId if generationId is missing
@@ -211,7 +207,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    */
   @Override
   public void createBucket(String bucketName, CreateBucketOptions options) throws IOException {
-    logger.atFiner().log("createBucket(%s)", bucketName);
+    logger.atFiner().log("%s: createBucket(%s)", InvocationIdContext.getInvocationId(), bucketName);
     checkArgument(!isNullOrEmpty(bucketName), "bucketName must not be null or empty");
     checkNotNull(options, "options must not be null");
     checkNotNull(storageOptions.getProjectId(), "projectId must not be null");
@@ -251,7 +247,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    */
   @Override
   public void createEmptyObject(StorageResourceId resourceId) throws IOException {
-    logger.atFiner().log("createEmptyObject(%s)", resourceId);
+    logger.atFiner().log(
+        "%s: createEmptyObject(%s)", InvocationIdContext.getInvocationId(), resourceId);
     checkArgument(
         resourceId.isStorageObject(), "Expected full StorageObject id, got %s", resourceId);
     createEmptyObject(resourceId, EMPTY_OBJECT_CREATE_OPTIONS);
@@ -272,8 +269,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
     } catch (StorageException e) {
       if (canIgnoreExceptionForEmptyObject(e, resourceId, options)) {
         logger.atInfo().log(
-            "Ignoring exception of type %s; verified object already exists with desired state.",
-            e.getClass().getSimpleName());
+            "%s: Ignoring exception of type %s; verified object already exists with desired state.",
+            InvocationIdContext.getInvocationId(), e.getClass().getSimpleName());
         logger.atFine().withCause(e).log("Ignored exception while creating empty object");
       } else {
         if (errorExtractor.getErrorType(e) == ErrorType.ALREADY_EXISTS) {
@@ -303,7 +300,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   @Override
   public void createEmptyObjects(List<StorageResourceId> resourceIds, CreateObjectOptions options)
       throws IOException {
-    logger.atFiner().log("createEmptyObjects(%s)", resourceIds);
+    logger.atFiner().log(
+        "%s: createEmptyObjects(%s)", InvocationIdContext.getInvocationId(), resourceIds);
     if (resourceIds.isEmpty()) {
       return;
     }
@@ -332,7 +330,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
             () -> {
               try {
                 createEmptyObjectInternal(resourceId, options);
-                logger.atFiner().log("Successfully inserted %s", resourceId);
+                logger.atFiner().log(
+                    "%s: Successfully inserted %s",
+                    InvocationIdContext.getInvocationId(), resourceId);
               } catch (StorageException se) {
                 boolean canIgnoreException = false;
                 try {
@@ -565,9 +565,12 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
             while (!copyWriter.isDone()) {
               copyWriter.copyChunk();
               logger.atFinest().log(
-                  "Copy (%s to %s) did not complete. Resuming...", srcString, dstString);
+                  "%s: Copy (%s to %s) did not complete. Resuming...",
+                  InvocationIdContext.getInvocationId(), srcString, dstString);
             }
-            logger.atFiner().log("Successfully copied %s to %s", srcString, dstString);
+            logger.atFiner().log(
+                "%s: Successfully copied %s to %s",
+                InvocationIdContext.getInvocationId(), srcString, dstString);
           } catch (StorageException e) {
             GoogleCloudStorageEventBus.postOnException();
             if (errorExtractor.getErrorType(e) == ErrorType.NOT_FOUND) {
@@ -590,7 +593,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   /** See {@link GoogleCloudStorage#listBucketNames()} for details about expected behavior. */
   @Override
   public List<String> listBucketNames() throws IOException {
-    logger.atFiner().log("listBucketNames()");
+    logger.atFiner().log("%s: listBucketNames()", InvocationIdContext.getInvocationId());
     List<Bucket> allBuckets = listBucketsInternal();
     List<String> bucketNames = new ArrayList<>(allBuckets.size());
     for (Bucket bucket : allBuckets) {
@@ -602,7 +605,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   /** See {@link GoogleCloudStorage#listBucketInfo()} for details about expected behavior. */
   @Override
   public List<GoogleCloudStorageItemInfo> listBucketInfo() throws IOException {
-    logger.atFiner().log("listBucketInfo()");
+    logger.atFiner().log("%s: listBucketInfo()", InvocationIdContext.getInvocationId());
     List<Bucket> allBuckets = listBucketsInternal();
     List<GoogleCloudStorageItemInfo> bucketInfos = new ArrayList<>(allBuckets.size());
     for (Bucket bucket : allBuckets) {
@@ -617,7 +620,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    * GoogleCloudStorageItemInfos.
    */
   private List<Bucket> listBucketsInternal() throws IOException {
-    logger.atFiner().log("listBucketsInternal()");
+    logger.atFiner().log("%s: listBucketsInternal()", InvocationIdContext.getInvocationId());
     checkNotNull(storageOptions.getProjectId(), "projectId must not be null");
     List<Bucket> allBuckets = new ArrayList<>();
     try {
@@ -664,7 +667,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   /** See {@link GoogleCloudStorage#deleteObjects(List)} for details about the expected behavior. */
   @Override
   public void deleteObjects(List<StorageResourceId> fullObjectNames) throws IOException {
-    logger.atFiner().log("deleteObjects(%s)", fullObjectNames);
+    logger.atFiner().log(
+        "%s: deleteObjects(%s)", InvocationIdContext.getInvocationId(), fullObjectNames);
 
     if (fullObjectNames.isEmpty()) {
       return;
@@ -728,7 +732,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
                 // Denotes that the item cannot be found.
                 // If the item isn't found, treat it the same as if it's not found
                 // in the delete case: assume the user wanted the object gone, and now it is.
-                logger.atFiner().log("deleteObjects(%s): get not found.", resourceId);
+                logger.atFiner().log(
+                    "%s: deleteObjects(%s): get not found.",
+                    InvocationIdContext.getInvocationId(), resourceId);
                 return;
               }
               long generation = checkNotNull(blob.getGeneration(), "generation can not be null");
@@ -766,9 +772,12 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
           // This situation typically shows up when we make a request to delete something and the
           // server receives the request, but we get a retry-able error before we get a response.
           // During a retry, we no longer find the item because the server had deleted it already.
-          logger.atFiner().log("Delete object %s not found.", resourceId);
+          logger.atFiner().log(
+              "%s: Delete object %s not found.", InvocationIdContext.getInvocationId(), resourceId);
         } else {
-          logger.atFiner().log("Successfully deleted %s at generation %s", resourceId, generation);
+          logger.atFiner().log(
+              "%s: Successfully deleted %s at generation %s",
+              InvocationIdContext.getInvocationId(), resourceId, generation);
         }
       }
 
@@ -797,7 +806,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   /** See {@link GoogleCloudStorage#deleteBuckets(List)} for details about expected behavior. */
   @Override
   public void deleteBuckets(List<String> bucketNames) throws IOException {
-    logger.atFiner().log("deleteBuckets(%s)", bucketNames);
+    logger.atFiner().log(
+        "%s: deleteBuckets(%s)", InvocationIdContext.getInvocationId(), bucketNames);
 
     // Validate all the inputs first.
     for (String bucketName : bucketNames) {
@@ -829,7 +839,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   @Override
   public List<GoogleCloudStorageItemInfo> getItemInfos(List<StorageResourceId> resourceIds)
       throws IOException {
-    logger.atFiner().log("getItemInfos(%s)", resourceIds);
+    logger.atFiner().log(
+        "%s: getItemInfos(%s)", InvocationIdContext.getInvocationId(), resourceIds);
 
     if (resourceIds.isEmpty()) {
       return new ArrayList<>();
@@ -894,11 +905,13 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
       public void onSuccess(@Nullable Bucket bucket) {
         if (bucket != null) {
           logger.atFiner().log(
-              "getItemInfos: Successfully fetched bucket: %s for resourceId: %s",
-              bucket, resourceId);
+              "%s: getItemInfos: Successfully fetched bucket: %s for resourceId: %s",
+              InvocationIdContext.getInvocationId(), bucket, resourceId);
           itemInfos.put(resourceId, createItemInfoForBucket(resourceId, bucket));
         } else {
-          logger.atFiner().log("getItemInfos: bucket '%s' not found", resourceId.getBucketName());
+          logger.atFiner().log(
+              "%s: getItemInfos: bucket '%s' not found",
+              InvocationIdContext.getInvocationId(), resourceId.getBucketName());
           itemInfos.put(resourceId, GoogleCloudStorageItemInfo.createNotFound(resourceId));
         }
       }
@@ -923,11 +936,13 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
       public void onSuccess(@Nullable Blob blob) {
         if (blob != null) {
           logger.atFiner().log(
-              "getItemInfos: Successfully fetched object '%s' for resourceId '%s'",
-              blob, resourceId);
+              "%s: getItemInfos: Successfully fetched object '%s' for resourceId '%s'",
+              InvocationIdContext.getInvocationId(), blob, resourceId);
           itemInfos.put(resourceId, createItemInfoForBlob(resourceId, blob));
         } else {
-          logger.atFiner().log("getItemInfos: object '%s' not found", resourceId);
+          logger.atFiner().log(
+              "%s: getItemInfos: object '%s' not found",
+              InvocationIdContext.getInvocationId(), resourceId);
           itemInfos.put(resourceId, GoogleCloudStorageItemInfo.createNotFound(resourceId));
         }
       }
@@ -947,7 +962,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    */
   @Override
   public GoogleCloudStorageItemInfo getItemInfo(StorageResourceId resourceId) throws IOException {
-    logger.atFiner().log("getItemInfo(%s)", resourceId);
+    logger.atFiner().log("%s: getItemInfo(%s)", InvocationIdContext.getInvocationId(), resourceId);
 
     // Handle ROOT case first.
     if (resourceId.isRoot()) {
@@ -960,21 +975,24 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
       if (bucket != null) {
         itemInfo = createItemInfoForBucket(resourceId, bucket);
       } else {
-        logger.atFiner().log("getBucket(%s): not found", resourceId.getBucketName());
+        logger.atFiner().log(
+            "%s: getBucket(%s): not found",
+            InvocationIdContext.getInvocationId(), resourceId.getBucketName());
       }
     } else {
       Blob blob = getBlob(resourceId);
       if (blob != null) {
         itemInfo = createItemInfoForBlob(resourceId, blob);
       } else {
-        logger.atFiner().log("getObject(%s): not found", resourceId);
+        logger.atFiner().log(
+            "%s: getObject(%s): not found", InvocationIdContext.getInvocationId(), resourceId);
       }
     }
 
     if (itemInfo == null) {
       itemInfo = GoogleCloudStorageItemInfo.createNotFound(resourceId);
     }
-    logger.atFiner().log("getItemInfo: %s", itemInfo);
+    logger.atFiner().log("%s: getItemInfo: %s", InvocationIdContext.getInvocationId(), itemInfo);
     return itemInfo;
   }
 
@@ -987,7 +1005,7 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    */
   @Nullable
   private Bucket getBucket(String bucketName) throws IOException {
-    logger.atFiner().log("getBucket(%s)", bucketName);
+    logger.atFiner().log("%s: getBucket(%s)", InvocationIdContext.getInvocationId(), bucketName);
     checkArgument(!isNullOrEmpty(bucketName), "bucketName must not be null or empty");
     try {
       return storage.get(bucketName);
@@ -1029,7 +1047,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   @Override
   public SeekableByteChannel open(
       StorageResourceId resourceId, GoogleCloudStorageReadOptions readOptions) throws IOException {
-    logger.atFiner().log("open(%s, %s)", resourceId, readOptions);
+    logger.atFiner().log(
+        "%s: open(%s, %s)", InvocationIdContext.getInvocationId(), resourceId, readOptions);
     return open(resourceId, /* itemInfo= */ null, readOptions);
   }
 
@@ -1037,7 +1056,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   public SeekableByteChannel open(
       GoogleCloudStorageItemInfo itemInfo, GoogleCloudStorageReadOptions readOptions)
       throws IOException {
-    logger.atFiner().log("open(%s, %s)", itemInfo, readOptions);
+    logger.atFiner().log(
+        "%s: open(%s, %s)", InvocationIdContext.getInvocationId(), itemInfo, readOptions);
     checkNotNull(itemInfo, "itemInfo should not be null");
 
     StorageResourceId resourceId = itemInfo.getResourceId();
@@ -1081,7 +1101,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   @Override
   public List<GoogleCloudStorageItemInfo> updateItems(List<UpdatableItemInfo> itemInfoList)
       throws IOException {
-    logger.atFiner().log("updateItems(%s)", itemInfoList);
+    logger.atFiner().log(
+        "%s: updateItems(%s)", InvocationIdContext.getInvocationId(), itemInfoList);
 
     if (itemInfoList.isEmpty()) {
       return new ArrayList<>();
@@ -1116,13 +1137,15 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
               public void onSuccess(Blob blob) {
                 if (blob == null) {
                   // Indicated that the blob was not found.
-                  logger.atFiner().log("updateItems: object not found %s", resourceId);
+                  logger.atFiner().log(
+                      "%s: updateItems: object not found %s",
+                      InvocationIdContext.getInvocationId(), resourceId);
                   resultItemInfos.put(
                       resourceId, GoogleCloudStorageItemInfo.createNotFound(resourceId));
                 } else {
                   logger.atFiner().log(
-                      "updateItems: Successfully updated object '%s' for resourceId '%s'",
-                      blob, resourceId);
+                      "%s: updateItems: Successfully updated object '%s' for resourceId '%s'",
+                      InvocationIdContext.getInvocationId(), blob, resourceId);
                   resultItemInfos.put(resourceId, createItemInfoForBlob(resourceId, blob));
                 }
               }
@@ -1175,7 +1198,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   public void compose(
       String bucketName, List<String> sources, String destination, String contentType)
       throws IOException {
-    logger.atFiner().log("compose(%s, %s, %s, %s)", bucketName, sources, destination, contentType);
+    logger.atFiner().log(
+        "%s: compose(%s, %s, %s, %s)",
+        InvocationIdContext.getInvocationId(), bucketName, sources, destination, contentType);
     List<StorageResourceId> sourceIds =
         sources.stream()
             .map(objectName -> new StorageResourceId(bucketName, objectName))
@@ -1197,7 +1222,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   public GoogleCloudStorageItemInfo composeObjects(
       List<StorageResourceId> sources, StorageResourceId destination, CreateObjectOptions options)
       throws IOException {
-    logger.atFiner().log("composeObjects(%s, %s, %s)", sources, destination, options);
+    logger.atFiner().log(
+        "%s: composeObjects(%s, %s, %s)",
+        InvocationIdContext.getInvocationId(), sources, destination, options);
     for (StorageResourceId inputId : sources) {
       if (!destination.getBucketName().equals(inputId.getBucketName())) {
         GoogleCloudStorageEventBus.postOnException();
@@ -1232,7 +1259,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
       throw new IOException(e);
     }
     GoogleCloudStorageItemInfo compositeInfo = createItemInfoForBlob(destination, composedBlob);
-    logger.atFiner().log("composeObjects() done, returning: %s", compositeInfo);
+    logger.atFiner().log(
+        "%s: composeObjects() done, returning: %s",
+        InvocationIdContext.getInvocationId(), compositeInfo);
     return compositeInfo;
   }
 
@@ -1248,7 +1277,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
    */
   private long getWriteGeneration(StorageResourceId resourceId, boolean overwrite)
       throws IOException {
-    logger.atFiner().log("getWriteGeneration(%s, %s)", resourceId, overwrite);
+    logger.atFiner().log(
+        "%s: getWriteGeneration(%s, %s)",
+        InvocationIdContext.getInvocationId(), resourceId, overwrite);
     GoogleCloudStorageItemInfo info = getItemInfo(resourceId);
     if (!info.exists()) {
       return 0L;
@@ -1311,7 +1342,8 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
         MoreObjects.firstNonNull(storageOptions.getHttpRequestHeaders(), ImmutableMap.of());
     String appName = storageOptions.getAppName();
     if (!httpRequestHeaders.containsKey(USER_AGENT) && !Strings.isNullOrEmpty(appName)) {
-      logger.atFiner().log("Setting useragent %s", appName);
+      logger.atFiner().log(
+          "%s: Setting useragent %s", InvocationIdContext.getInvocationId(), appName);
       return ImmutableMap.<String, String>builder()
           .putAll(httpRequestHeaders)
           .put(USER_AGENT, appName)
@@ -1324,7 +1356,9 @@ public class GoogleCloudStorageClientImpl extends ForwardingGoogleCloudStorage {
   private static BlobWriteSessionConfig getSessionConfig(
       AsyncWriteChannelOptions writeOptions, ExecutorService pCUExecutorService)
       throws IOException {
-    logger.atFiner().log("Upload strategy in use: %s", writeOptions.getUploadType());
+    logger.atFiner().log(
+        "%s: Upload strategy in use: %s",
+        InvocationIdContext.getInvocationId(), writeOptions.getUploadType());
     switch (writeOptions.getUploadType()) {
       case CHUNK_UPLOAD:
         return BlobWriteSessionConfigs.getDefault()

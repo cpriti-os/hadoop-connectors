@@ -6,7 +6,12 @@ import java.util.UUID;
 
 public class InvocationIdContext {
   private static final InheritableThreadLocal<String> INVOCATION_ID =
-      (InheritableThreadLocal<String>) InheritableThreadLocal.withInitial(() -> "");
+      new InheritableThreadLocal<>() {
+        @Override
+        protected String initialValue() {
+          return "";
+        }
+      };
 
   public static String getInvocationId() {
     return INVOCATION_ID.get();

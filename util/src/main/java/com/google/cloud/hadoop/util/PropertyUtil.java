@@ -48,7 +48,9 @@ public class PropertyUtil {
       properties.load(stream);
       String value = properties.getProperty(key);
       if (value == null) {
-        logger.atSevere().log("Key %s not found in properties file %s.", key, propertyFile);
+        logger.atSevere().log(
+            "%s: Key %s not found in properties file %s.",
+            InvocationIdContext.getInvocationId(), key, propertyFile);
         return defaultValue;
       }
       return value;

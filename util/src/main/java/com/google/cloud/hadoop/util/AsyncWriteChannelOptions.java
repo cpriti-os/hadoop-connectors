@@ -188,8 +188,8 @@ public abstract class AsyncWriteChannelOptions {
       if (chunkSize > UPLOAD_CHUNK_SIZE_GRANULARITY
           && chunkSize % UPLOAD_CHUNK_SIZE_GRANULARITY != 0) {
         logger.atWarning().log(
-            "Upload chunk size should be a multiple of %s for the best performance, got %s",
-            UPLOAD_CHUNK_SIZE_GRANULARITY, chunkSize);
+            "%s: Upload chunk size should be a multiple of %s for the best performance, got %s",
+            InvocationIdContext.getInvocationId(), UPLOAD_CHUNK_SIZE_GRANULARITY, chunkSize);
       }
     }
   }

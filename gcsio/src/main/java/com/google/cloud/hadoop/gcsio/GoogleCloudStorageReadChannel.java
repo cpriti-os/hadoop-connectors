@@ -33,11 +33,7 @@ import com.google.api.client.util.Sleeper;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageReadOptions.Fadvise;
-import com.google.cloud.hadoop.util.ApiErrorExtractor;
-import com.google.cloud.hadoop.util.ClientRequestHelper;
-import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
-import com.google.cloud.hadoop.util.ResilientOperation;
-import com.google.cloud.hadoop.util.RetryDeterminer;
+import com.google.cloud.hadoop.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import com.google.common.flogger.GoogleLogger;
@@ -282,8 +278,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     }
 
     logger.atFiner().log(
-        "Reading %d bytes at %d position from '%s'",
-        buffer.remaining(), currentPosition, resourceId);
+        "%s: Reading %d bytes at %d position from '%s'",
+        InvocationIdContext.getInvocationId(), buffer.remaining(), currentPosition, resourceId);
 
     // Do not perform any further reads if we already read everything from this channel.
     if (currentPosition == size) {
@@ -358,21 +354,23 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
 
         if (retriesAttempted != 0) {
           logger.atInfo().log(
-              "Success after %d retries on reading '%s'", retriesAttempted, resourceId);
+              "%s: Success after %d retries on reading '%s'",
+              InvocationIdContext.getInvocationId(), retriesAttempted, resourceId);
         }
         // The count of retriesAttempted is per low-level contentChannel.read call;
         // each time we make progress we reset the retry counter.
         retriesAttempted = 0;
       } catch (IOException ioe) {
         logger.atFine().log(
-            "Closing contentChannel after %s exception for '%s'.", ioe.getMessage(), resourceId);
+            "%s: Closing contentChannel after %s exception for '%s'.",
+            InvocationIdContext.getInvocationId(), ioe.getMessage(), resourceId);
         closeContentChannel();
 
         if (buffer.remaining() != remainingBeforeRead) {
           int partialRead = remainingBeforeRead - buffer.remaining();
           logger.atInfo().log(
-              "Despite exception, had partial read of %d bytes from '%s'; resetting retry count.",
-              partialRead, resourceId);
+              "%s: Despite exception, had partial read of %d bytes from '%s'; resetting retry count.",
+              InvocationIdContext.getInvocationId(), partialRead, resourceId);
           retriesAttempted = 0;
           totalBytesRead += partialRead;
           currentPosition += partialRead;
@@ -420,7 +418,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
         }
 
         logger.atInfo().log(
-            "Done sleeping before retry #%d/%d for '%s'", retriesAttempted, maxRetries, resourceId);
+            "%s: Done sleeping before retry #%d/%d for '%s'",
+            InvocationIdContext.getInvocationId(), retriesAttempted, maxRetries, resourceId);
       } catch (RuntimeException r) {
         GoogleCloudStorageEventBus.postOnException();
         closeContentChannel();
@@ -485,7 +484,9 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
    */
   protected void closeContentChannel() {
     if (contentChannel != null) {
-      logger.atFiner().log("Closing internal contentChannel for '%s'", resourceId);
+      logger.atFiner().log(
+          "%s: Closing internal contentChannel for '%s'",
+          InvocationIdContext.getInvocationId(), resourceId);
       try {
         contentChannel.close();
       } catch (Exception e) {
@@ -509,10 +510,13 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
   @Override
   public void close() {
     if (!channelIsOpen) {
-      logger.atFiner().log("Ignoring close: channel for '%s' is not open.", resourceId);
+      logger.atFiner().log(
+          "%s: Ignoring close: channel for '%s' is not open.",
+          InvocationIdContext.getInvocationId(), resourceId);
       return;
     }
-    logger.atFiner().log("Closing channel for '%s'", resourceId);
+    logger.atFiner().log(
+        "%s: Closing channel for '%s'", InvocationIdContext.getInvocationId(), resourceId);
     channelIsOpen = false;
     closeContentChannel();
   }
@@ -551,7 +555,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
 
     validatePosition(newPosition);
     logger.atFiner().log(
-        "Seek from %s to %s position for '%s'", currentPosition, newPosition, resourceId);
+        "%s: Seek from %s to %s position for '%s'",
+        InvocationIdContext.getInvocationId(), currentPosition, newPosition, resourceId);
     currentPosition = newPosition;
     return this;
   }
@@ -562,8 +567,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     }
     if (currentPosition < oldPosition) {
       logger.atFine().log(
-          "Detected backward read from %s to %s position, switching to random IO for '%s'",
-          oldPosition, currentPosition, resourceId);
+          "%s: Detected backward read from %s to %s position, switching to random IO for '%s'",
+          InvocationIdContext.getInvocationId(), oldPosition, currentPosition, resourceId);
       return true;
     }
     if (oldPosition >= 0 && oldPosition + readOptions.getInplaceSeekLimit() < currentPosition) {
@@ -596,8 +601,12 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
         if (bytesRead < 0) {
           // Shouldn't happen since we called validatePosition prior to this loop.
           logger.atInfo().log(
-              "Somehow read %d bytes trying to skip %d bytes to seek to position %d, size: %d",
-              bytesRead, seekDistance, currentPosition, size);
+              "%s: Somehow read %d bytes trying to skip %d bytes to seek to position %d, size: %d",
+              InvocationIdContext.getInvocationId(),
+              bytesRead,
+              seekDistance,
+              currentPosition,
+              size);
           closeContentChannel();
         } else {
           seekDistance -= bytesRead;
@@ -697,8 +706,12 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     }
 
     logger.atFiner().log(
-        "Performing lazySeek from %s to %s position with %s bytesToRead for '%s'",
-        contentChannelPosition, currentPosition, bytesToRead, resourceId);
+        "%s: Performing lazySeek from %s to %s position with %s bytesToRead for '%s'",
+        InvocationIdContext.getInvocationId(),
+        contentChannelPosition,
+        currentPosition,
+        bytesToRead,
+        resourceId);
 
     // used to auto-detect random access
     long oldPosition = contentChannelPosition;
@@ -710,8 +723,12 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
         && (gzipEncoded || seekDistance <= readOptions.getInplaceSeekLimit())
         && currentPosition < contentChannelEnd) {
       logger.atFiner().log(
-          "Seeking forward %d bytes (inplaceSeekLimit: %d) in-place to position %d for '%s'",
-          seekDistance, readOptions.getInplaceSeekLimit(), currentPosition, resourceId);
+          "%s: Seeking forward %d bytes (inplaceSeekLimit: %d) in-place to position %d for '%s'",
+          InvocationIdContext.getInvocationId(),
+          seekDistance,
+          readOptions.getInplaceSeekLimit(),
+          currentPosition,
+          resourceId);
       skipInPlace(seekDistance);
     } else {
       closeContentChannel();
@@ -812,8 +829,13 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     metadataInitialized = true;
 
     logger.atFiner().log(
-        "Initialized metadata (gzipEncoded=%s, size=%s, randomAccess=%s, generation=%s) for '%s'",
-        gzipEncoded, size, randomAccess, resourceId.getGenerationId(), resourceId);
+        "%s: Initialized metadata (gzipEncoded=%s, size=%s, randomAccess=%s, generation=%s) for '%s'",
+        InvocationIdContext.getInvocationId(),
+        gzipEncoded,
+        size,
+        randomAccess,
+        resourceId.getGenerationId(),
+        resourceId);
   }
 
   private void cacheFooter(HttpResponse response) throws IOException {
@@ -844,7 +866,9 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
       footerContent = null;
       throw e;
     }
-    logger.atFiner().log("Prefetched %s bytes footer for '%s'", footerContent.length, resourceId);
+    logger.atFiner().log(
+        "%s: Prefetched %s bytes footer for '%s'",
+        InvocationIdContext.getInvocationId(), footerContent.length, resourceId);
   }
 
   /**
@@ -856,7 +880,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     int offset = toIntExact(currentPosition - (size - footerContent.length));
     int length = footerContent.length - offset;
     logger.atFiner().log(
-        "Opened stream (prefetched footer) from %d position for '%s'", currentPosition, resourceId);
+        "%s: Opened stream (prefetched footer) from %d position for '%s'",
+        InvocationIdContext.getInvocationId(), currentPosition, resourceId);
     return new ByteArrayInputStream(footerContent, offset, length);
   }
 
@@ -956,8 +981,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
         // We don't know the size yet (metadataInitialized == false) and we're seeking to
         // byte 0, but got 'range not satisfiable'; the object must be empty.
         logger.atInfo().log(
-            "Got 'range not satisfiable' for reading '%s' at position 0; assuming empty.",
-            resourceId);
+            "%s: Got 'range not satisfiable' for reading '%s' at position 0; assuming empty.",
+            InvocationIdContext.getInvocationId(), resourceId);
         size = 0;
         return new ByteArrayInputStream(new byte[0]);
       }
@@ -1011,7 +1036,8 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
           cacheFooter(response);
           if (retriesCount != 0) {
             logger.atInfo().log(
-                "Successfully cached footer after %d retries for '%s'", retriesCount, resourceId);
+                "%s: Successfully cached footer after %d retries for '%s'",
+                InvocationIdContext.getInvocationId(), retriesCount, resourceId);
           }
           break;
         } catch (IOException footerException) {
@@ -1046,19 +1072,30 @@ public class GoogleCloudStorageReadChannel implements SeekableByteChannel {
     try {
       InputStream contentStream = response.getContent();
       logger.atFiner().log(
-          "Opened stream from %d position with %s range and %d bytesToRead for '%s'",
-          currentPosition, rangeHeader, bytesToRead, resourceId);
+          "%s: Opened stream from %d position with %s range and %d bytesToRead for '%s'",
+          InvocationIdContext.getInvocationId(),
+          currentPosition,
+          rangeHeader,
+          bytesToRead,
+          resourceId);
 
       if (contentChannelPosition < currentPosition) {
         long bytesToSkip = currentPosition - contentChannelPosition;
         logger.atFiner().log(
-            "Skipping %d bytes from %d position to %d position for '%s'",
-            bytesToSkip, contentChannelPosition, currentPosition, resourceId);
+            "%s: Skipping %d bytes from %d position to %d position for '%s'",
+            InvocationIdContext.getInvocationId(),
+            bytesToSkip,
+            contentChannelPosition,
+            currentPosition,
+            resourceId);
         while (bytesToSkip > 0) {
           long skippedBytes = contentStream.skip(bytesToSkip);
           logger.atFiner().log(
-              "Skipped %d bytes from %d position for '%s'",
-              skippedBytes, contentChannelPosition, resourceId);
+              "%s: Skipped %d bytes from %d position for '%s'",
+              InvocationIdContext.getInvocationId(),
+              skippedBytes,
+              contentChannelPosition,
+              resourceId);
           bytesToSkip -= skippedBytes;
           contentChannelPosition += skippedBytes;
         }

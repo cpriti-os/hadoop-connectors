@@ -18,11 +18,8 @@ package com.google.cloud.hadoop.gcsio;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.cloud.hadoop.util.ApiErrorExtractor;
-import com.google.cloud.hadoop.util.ErrorTypeExtractor;
+import com.google.cloud.hadoop.util.*;
 import com.google.cloud.hadoop.util.ErrorTypeExtractor.ErrorType;
-import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
-import com.google.cloud.hadoop.util.GrpcErrorTypeExtractor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.flogger.GoogleLogger;
@@ -205,7 +202,9 @@ class DeleteFolderOperation {
     return new FutureCallback<Void>() {
       @Override
       public void onSuccess(Void result) {
-        logger.atFiner().log("Successfully deleted folder %s", resourceId.toString());
+        logger.atFiner().log(
+            "%s: Successfully deleted folder %s",
+            InvocationIdContext.getInvocationId(), resourceId.toString());
         successfullDeletionOfFolderResource(resourceId);
       }
 
@@ -220,7 +219,8 @@ class DeleteFolderOperation {
           // During a retry, we no longer find the item because the server had deleted
           // it already.
           logger.atFiner().log(
-              "Delete folder '%s' not found: %s", resourceId, throwable.getMessage());
+              "%s: Delete folder '%s' not found: %s",
+              InvocationIdContext.getInvocationId(), resourceId, throwable.getMessage());
           successfullDeletionOfFolderResource(resourceId);
         } else if (isErrorType(throwable, ErrorType.FAILED_PRECONDITION)
             && attempt <= MAXIMUM_PRECONDITION_FAILURES_IN_DELETE) {

@@ -38,6 +38,7 @@ import com.google.cloud.hadoop.util.AsyncWriteChannelOptions;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions.PartFileCleanupType;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions.PipeType;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions.UploadType;
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.cloud.hadoop.util.RedactedString;
 import com.google.cloud.hadoop.util.RequesterPaysOptions;
 import com.google.cloud.hadoop.util.RequesterPaysOptions.RequesterPaysMode;
@@ -636,7 +637,9 @@ public class GoogleHadoopFileSystemConfiguration {
   private static String getApplicationName(Configuration config) {
     String appNameSuffix = nullToEmpty(GCS_APPLICATION_NAME_SUFFIX.get(config, config::get));
     String applicationName = GoogleHadoopFileSystem.GHFS_ID + appNameSuffix;
-    logger.atFiner().log("getApplicationName(config: %s): %s", config, applicationName);
+    logger.atFiner().log(
+        "%s: getApplicationName(config: %s): %s",
+        InvocationIdContext.getInvocationId(), config, applicationName);
     return applicationName;
   }
 

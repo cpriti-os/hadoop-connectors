@@ -20,6 +20,7 @@ import static com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystemImpl.get
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 
+import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.flogger.GoogleLogger;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -111,7 +112,9 @@ class BatchExecutor {
       requestsExecutor.shutdown();
       try {
         if (!requestsExecutor.awaitTermination(1, TimeUnit.SECONDS)) {
-          logger.atWarning().log("Forcibly shutting down grpc manual batching thread pool.");
+          logger.atWarning().log(
+              "%s: Forcibly shutting down grpc manual batching thread pool.",
+              InvocationIdContext.getInvocationId());
           requestsExecutor.shutdownNow();
         }
       } catch (InterruptedException e) {
