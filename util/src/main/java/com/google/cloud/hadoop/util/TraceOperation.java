@@ -139,7 +139,7 @@ public class TraceOperation implements ITraceOperation {
     this.trace.endOperationEvent(this.startEvent);
 
     if (this.shouldLog) {
-      logger.atInfo().log("%s: %s", InvocationIdContext.getInvocationId(), this.trace);
+      logger.atInfo().log("%s", this.trace);
     }
   }
 

@@ -93,7 +93,7 @@ class GoogleHadoopFSInputStream extends FSInputStream implements IOStatisticsSou
   static GoogleHadoopFSInputStream create(
       GoogleHadoopFileSystem ghfs, URI gcsPath, FileSystem.Statistics statistics)
       throws IOException {
-    logger.atFiner().log("%s: create(gcsPath: %s)", InvocationIdContext.getInvocationId(), gcsPath);
+    logger.atFiner().log("%s create(gcsPath: %s)", InvocationIdContext.getInvocationId(), gcsPath);
     GoogleCloudStorageFileSystem gcsFs = ghfs.getGcsFs();
     FileInfo fileInfo = null;
     SeekableByteChannel channel;

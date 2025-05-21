@@ -1,6 +1,5 @@
 package com.google.cloud.hadoop.util;
 
-import static com.google.cloud.hadoop.util.interceptors.InvocationIdInterceptor.GCCL_INVOCATION_ID_PREFIX;
 import static org.junit.Assert.*;
 
 import org.junit.Before;
@@ -27,9 +26,7 @@ public class InvocationIdContextTest {
     String invocationId = InvocationIdContext.getInvocationId();
     assertNotEquals("", invocationId);
     // Verify the format of the invocation ID
-    assertTrue(invocationId.startsWith(GCCL_INVOCATION_ID_PREFIX));
-    String uuidPart = invocationId.substring(GCCL_INVOCATION_ID_PREFIX.length());
-    assertEquals(36, uuidPart.length());
+    assertEquals(36, invocationId.length());
   }
 
   @Test
@@ -67,8 +64,7 @@ public class InvocationIdContextTest {
 
     // Create a child thread and verify it inherits the same invocation ID
     Thread childThread =
-        new Thread(
-            () -> assertEquals(parentThreadId, InvocationIdContext.getInvocationId()));
+        new Thread(() -> assertEquals(parentThreadId, InvocationIdContext.getInvocationId()));
     childThread.start();
     childThread.join();
 

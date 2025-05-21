@@ -1,7 +1,5 @@
 package com.google.cloud.hadoop.util;
 
-import static com.google.cloud.hadoop.util.interceptors.InvocationIdInterceptor.GCCL_INVOCATION_ID_PREFIX;
-
 import java.util.UUID;
 
 public class InvocationIdContext {
@@ -18,7 +16,7 @@ public class InvocationIdContext {
   }
 
   public static void setInvocationId() {
-    INVOCATION_ID.set(GCCL_INVOCATION_ID_PREFIX + UUID.randomUUID());
+    INVOCATION_ID.set(UUID.randomUUID() + ":");
   }
 
   public static void clear() {

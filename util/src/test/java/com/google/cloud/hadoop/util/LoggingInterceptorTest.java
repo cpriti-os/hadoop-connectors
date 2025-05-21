@@ -22,7 +22,7 @@ public class LoggingInterceptorTest {
   public void setUp() {
     mockLogging = mock(Logging.class);
     loggingInterceptor =
-        new LoggingInterceptor(null) {
+        new LoggingInterceptor("") {
           @Override
           protected Logging createLoggingService() {
             return mockLogging;
@@ -69,7 +69,7 @@ public class LoggingInterceptorTest {
   @Test
   public void doesNotPublishNonLoggableRecord() {
     LoggingInterceptor nonLoggableInterceptor =
-        new LoggingInterceptor(null) {
+        new LoggingInterceptor("") {
           @Override
           public boolean isLoggable(LogRecord record) {
             return false; // Force isLoggable() to return false
