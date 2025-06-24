@@ -29,7 +29,7 @@ import java.util.Map;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
-public class GcsJsonApiEvent implements IGcsJsonApiEvent {
+public class GcsJsonApiEvent implements IGcsApiEvent {
   public static final String BACKOFF_TIME = "BACKOFF_TIME";
   public static final String RETRY_COUNT = "RETRY_COUNT";
   public static final String STATUS_CODE = "STATUS_CODE";
@@ -96,6 +96,10 @@ public class GcsJsonApiEvent implements IGcsJsonApiEvent {
     return method;
   }
 
+  public ApiType getApiType() {
+    return ApiType.JSON;
+  }
+
   public Object getProperty(String key) {
     return properties == null ? null : properties.get(key);
   }
@@ -157,14 +161,6 @@ public class GcsJsonApiEvent implements IGcsJsonApiEvent {
     }
 
     return RequestType.OTHER;
-  }
-
-  public enum EventType {
-    BACKOFF,
-    EXCEPTION,
-    RESPONSE,
-    RETRY_SKIPPED,
-    STARTED,
   }
 
   public enum RequestType {

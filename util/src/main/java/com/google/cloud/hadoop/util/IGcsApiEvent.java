@@ -16,12 +16,28 @@
 
 package com.google.cloud.hadoop.util;
 
-public interface IGcsJsonApiEvent {
-  GcsJsonApiEvent.EventType getEventType();
+public interface IGcsApiEvent {
+
+  enum ApiType {
+    GRPC,
+    JSON
+  }
+
+  enum EventType {
+    BACKOFF,
+    EXCEPTION,
+    RESPONSE,
+    RETRY_SKIPPED,
+    STARTED,
+  }
+
+  EventType getEventType();
 
   Object getContext();
 
   String getMethod();
 
   Object getProperty(String key);
+
+  ApiType getApiType();
 }

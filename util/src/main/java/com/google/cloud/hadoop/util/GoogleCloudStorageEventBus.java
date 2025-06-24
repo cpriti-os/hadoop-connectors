@@ -73,7 +73,7 @@ public class GoogleCloudStorageEventBus {
     eventBus.post(status);
   }
 
-  public static void postGcsJsonApiEvent(IGcsJsonApiEvent gcsJsonApiEvent) {
+  public static void postGcsJsonApiEvent(IGcsApiEvent gcsJsonApiEvent) {
     eventBus.post(gcsJsonApiEvent);
   }
 }

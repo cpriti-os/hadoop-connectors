@@ -36,7 +36,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.cloud.hadoop.util.GcsJsonApiEvent;
 import com.google.cloud.hadoop.util.GcsRequestExecutionEvent;
 import com.google.cloud.hadoop.util.GoogleCloudStorageEventBus;
-import com.google.cloud.hadoop.util.IGcsJsonApiEvent;
+import com.google.cloud.hadoop.util.IGcsApiEvent;
 import com.google.common.flogger.GoogleLogger;
 import io.grpc.Status;
 import java.io.IOException;
@@ -184,7 +184,7 @@ public class GoogleCloudStorageStatisticsTest {
     verifyStatistics(verifyCounterStats);
   }
 
-  private class TestGcsApiEvent implements IGcsJsonApiEvent {
+  private class TestGcsApiEvent implements IGcsApiEvent {
     private final int statusCode;
 
     TestGcsApiEvent(int statusCode) {
@@ -204,6 +204,11 @@ public class GoogleCloudStorageStatisticsTest {
     @Override
     public String getMethod() {
       return "GET";
+    }
+
+    @Override
+    public ApiType getApiType() {
+      return ApiType.JSON;
     }
 
     @Override

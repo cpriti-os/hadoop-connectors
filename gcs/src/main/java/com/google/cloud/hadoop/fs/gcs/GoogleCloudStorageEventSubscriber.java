@@ -22,10 +22,10 @@ import static com.google.cloud.hadoop.gcsio.StatisticTypeEnum.TYPE_DURATION_TOTA
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageStatistics;
 import com.google.cloud.hadoop.gcsio.StatisticTypeEnum;
 import com.google.cloud.hadoop.util.GcsJsonApiEvent;
-import com.google.cloud.hadoop.util.GcsJsonApiEvent.EventType;
 import com.google.cloud.hadoop.util.GcsJsonApiEvent.RequestType;
 import com.google.cloud.hadoop.util.GcsRequestExecutionEvent;
-import com.google.cloud.hadoop.util.IGcsJsonApiEvent;
+import com.google.cloud.hadoop.util.IGcsApiEvent;
+import com.google.cloud.hadoop.util.IGcsApiEvent.EventType;
 import com.google.cloud.hadoop.util.InvocationIdContext;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.Subscribe;
@@ -82,7 +82,7 @@ public class GoogleCloudStorageEventSubscriber {
   }
 
   @Subscribe
-  private void subscriberOnGcsRequestExecutionEvent(IGcsJsonApiEvent event) {
+  private void subscriberOnGcsRequestExecutionEvent(IGcsApiEvent event) {
     EventType eventType = event.getEventType();
     Object eventContext = event.getContext();
     if (eventType == EventType.STARTED) {
